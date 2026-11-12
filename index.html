@@ -126,6 +126,13 @@ textarea.inp { min-height: 80px; resize: vertical }
 .app-foot { margin: 28px 0 8px; padding-top: 14px; border-top: 1px solid var(--line, #ddd); display: grid; gap: 8px; justify-items: center; text-align: center; font-size: 14px; color: var(--muted) }
 .app-foot p { margin: 0 }
 .app-foot .linkish { min-height: 32px }
+.tour { display: grid; gap: 12px; justify-items: center; text-align: center }
+.tour-ic { font-size: 44px; line-height: 1 }
+.tour p { margin: 0; line-height: 1.7; font-size: 17px }
+.tour-dots { display: flex; gap: 6px }
+.tour-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line, #ccc) }
+.tour-dots span.on { background: var(--tone) }
+.tour .row { display: flex; gap: 8px; justify-content: center }
 .rules { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 10px }
 .rules li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; align-items: start; line-height: 1.5 }
 .rules .ok { color: var(--tone); font-weight: 700 }
@@ -691,6 +698,7 @@ function render() {
     `<div class="bk-remind" role="status"><p><b>⚠️ המקום לסרטונים בענן כמעט מלא</b> (${mb(VSYNC.usage().bytes)} מתוך 1GB). כדאי להגיד לגיא.</p>${vidMeter()}</div>`);
   if (!S.plan && !S.edit) main.insertAdjacentHTML("beforeend", `<footer class="app-foot">
     ${window.CLOUD ? `<p>💡 יש לך הצעה לשיפור? <button type="button" class="linkish" data-a="idea">כתבי כאן</button></p>` : ""}
+    <p><button type="button" class="linkish" data-a="tour">❓ איך משתמשים באפליקציה</button></p>
     <p><button type="button" class="linkish" data-a="privacy">מה מותר לכתוב כאן</button></p></footer>`);
 }
 
@@ -703,6 +711,23 @@ function openPrivacy(first) {
       <li><span class="no" aria-hidden="true">✗</span><span><b>אסור:</b> שמות של מתאמנות, פרטים אישיים, מידע רפואי עליהן</span></li>
     </ul>
     ${first ? `<button type="button" class="btn wide" data-a="privacy-ok">הבנתי</button>` : ""}`);
+}
+/* How-to tour: short steps, shown once on first sign-in, and always from the footer link */
+const TOUR = [
+  ["👋", "ברוכה הבאה", "זו האפליקציה של המערכים שלך. כל המערכים והתרגילים במקום אחד, בטלפון.<br>למעלה בוחרים <b>בר</b> או <b>מזרון</b>, והכול מתחלף."],
+  ["📋", "מערכים", "במסך <b>מערכים</b> יש מערכים מוכנים ומערכים שלך.<br>פותחים מערך ולוחצים <b>שכפול ועריכה</b>, ואז משנים בו מה שרוצים. או <b>+ מערך חדש</b> מאפס."],
+  ["🧘", "תרגילים", "במסך <b>תרגילים</b> יש הסבר, ציוד, גרסאות והתאמות לכל תרגיל.<br>אפשר להוסיף <b>תרגיל משלך</b> ולצרף לו <b>סרטון</b> שצילמת."],
+  ["🔄", "גיוון", "בתוך מערך אפשר ללחוץ <b>⇄</b> ולקבל תרגילים דומים שעוד לא במערך.<br>לוחצים <b>העברתי היום</b>, והאפליקציה זוכרת. כך רואים מה לא עשית הכי הרבה זמן."],
+  ["💡", "ועוד", "<b>אוכלוסיות</b>: מדריך התאמות. <b>שיתוף והדפסה</b> בתוך כל מערך.<br>הכול נשמר בענן, אפשר להיכנס מכל טלפון.<br>חסר משהו? למטה בכל מסך יש <b>💡 כתבי כאן</b>."]
+];
+function openTour(i, first) {
+  sheetCtx = { kind: "tour", i, first: !!first };
+  const [ic, h, body] = TOUR[i], last = i === TOUR.length - 1;
+  sheet(`<div class="tour"><div class="tour-ic" aria-hidden="true">${ic}</div>
+    <h3 id="sheet-title">${h}</h3><p>${body}</p>
+    <div class="tour-dots" aria-label="שלב ${i + 1} מתוך ${TOUR.length}">${TOUR.map((_, k) => `<span class="${k === i ? "on" : ""}"></span>`).join("")}</div>
+    <div class="row">${i > 0 ? `<button type="button" class="btn ghost" data-a="tour-prev">הקודם</button>` : ""}
+    <button type="button" class="btn" data-a="${last ? "close" : "tour-next"}">${last ? "הבנתי, מתחילים" : "הבא"}</button></div></div>`);
 }
 /* Improvement ideas: saved to the "suggestions" table, Claude reads them */
 function openIdea() {
@@ -861,7 +886,9 @@ async function openClass() {
   try { wakeLock = await navigator.wakeLock.request("screen"); wl.textContent = "המסך יישאר דלוק"; } catch (e) { wl.textContent = ""; }
 }
 function closeOverlay() {
+  const wasFirstTour = sheetCtx && sheetCtx.kind === "tour" && sheetCtx.first;
   overlay.innerHTML = ""; sheetCtx = null;
+  if (wasFirstTour) { store.set("shai_tour_ok", 1); if (!store.get("shai_privacy_ok", 0)) openPrivacy(true); return; }
   if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
   if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
 }
@@ -923,6 +950,9 @@ document.addEventListener("click", async e => {
       save(); closeOverlay(); render(); toast("התרגיל נמחק"); break; }
     case "vid-del": { const xid = sheetCtx.id; try { await VSYNC.remove(xid); toast("הסרטון נמחק"); } catch (err) { toast("לא הצלחתי למחוק"); } openEx(xid); render(); break; }
     case "backup": openBackup(); break;
+    case "tour": openTour(0, false); break;
+    case "tour-next": openTour(sheetCtx.i + 1, sheetCtx.first); break;
+    case "tour-prev": openTour(sheetCtx.i - 1, sheetCtx.first); break;
     case "privacy": openPrivacy(false); break;
     case "privacy-ok": store.set("shai_privacy_ok", 1); closeOverlay(); break;
     case "idea": openIdea(); break;
@@ -992,5 +1022,6 @@ if ("serviceWorker" in navigator && ON_OWN_SITE) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 render();
-if (window.CLOUD && !store.get("shai_privacy_ok", 0)) openPrivacy(true);
+if (window.CLOUD && !store.get("shai_tour_ok", 0)) openTour(0, true);
+else if (window.CLOUD && !store.get("shai_privacy_ok", 0)) openPrivacy(true);
 </script>
