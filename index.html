@@ -1,0 +1,996 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>הסטודיו של שי</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#3f6f5e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="הסטודיו של שי">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@400;600;700&display=swap">
+<style>
+/* Layout: phone-first studio binder. A bar/mat switch on top, three tabs at the bottom, lesson cards that open into a full plan. */
+:root {
+  --bg: #eef0ea;
+  --card: #fbfbf8;
+  --fg: #23302b;
+  --muted: #5f6b65;
+  --line: #d5dbd2;
+  --accent: #6b4c7a;      /* plum: barre */
+  --accent-soft: #ece4f0;
+  --mat: #3f6f5e;         /* deep sage: mat */
+  --mat-soft: #dde9e2;
+  --warn: #a2541c;
+  --warn-soft: #f6e6d8;
+  --ok: #2f7a4f;
+  --font-display: "Suez One", "Assistant", Georgia, serif;
+  --font-body: "Assistant", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161b19; --card: #1f2522; --fg: #e8ece7; --muted: #a3ada7; --line: #333c37;
+  --accent: #c7a6d6; --accent-soft: #2e2533; --mat: #8fc7ae; --mat-soft: #1f322b;
+  --warn: #f0a46c; --warn-soft: #3a2a1d; --ok: #7cc39c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #161b19; --card: #1f2522; --fg: #e8ece7; --muted: #a3ada7; --line: #333c37;
+  --accent: #c7a6d6; --accent-soft: #2e2533; --mat: #8fc7ae; --mat-soft: #1f322b;
+  --warn: #f0a46c; --warn-soft: #3a2a1d; --ok: #7cc39c; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 96px }
+body.mode-mat { --tone: var(--mat); --tone-soft: var(--mat-soft) }
+body.mode-barre { --tone: var(--accent); --tone-soft: var(--accent-soft) }
+.app { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px }
+button, input, select, textarea { font: inherit; color: inherit }
+button, a, .chip, .item { touch-action: manipulation; -webkit-tap-highlight-color: transparent }
+button:active { transform: scale(.98) }
+h1, h2, h3 { text-wrap: balance }
+:focus-visible { outline: 3px solid var(--tone); outline-offset: 2px }
+
+header { padding-block: 22px 0; display: flex; flex-direction: column; gap: 14px }
+.brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin: 0; line-height: 1.1 }
+.small-btn { min-height: 40px; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 4px 12px; cursor: pointer; font-size: 15px; color: var(--muted) }
+.switch { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 4px; gap: 4px }
+.switch button { min-height: 50px; border: 0; border-radius: 10px; background: transparent; font-size: 18px; font-weight: 700; cursor: pointer; color: var(--muted) }
+.switch button[aria-pressed="true"] { background: var(--tone); color: var(--card) }
+
+.tabs { position: fixed; inset: auto 0 0 0; z-index: 20; background: var(--card); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)) }
+.tabs button { min-height: 58px; border: 0; background: transparent; font-weight: 700; font-size: 15px; color: var(--muted); cursor: pointer; border-top: 3px solid transparent }
+.tabs button[aria-selected="true"] { color: var(--tone); border-top-color: var(--tone) }
+
+.today { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px }
+.today b { font-size: 15px }
+.hint { font-size: 13px; color: var(--muted) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { min-height: 40px; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--bg); cursor: pointer; font-size: 15px }
+.chip[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--fg); font-weight: 700 }
+.chip.f[aria-pressed="true"] { background: var(--tone-soft); border-color: var(--tone) }
+
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 6px 0 0 }
+.lead { margin: 0; color: var(--muted); font-size: 15px }
+.list-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap }
+
+.plans { display: grid; gap: 10px }
+.plan-card { text-align: start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; border-inline-start: 5px solid var(--tone) }
+.plan-card.mine { border-inline-start-style: double; border-inline-start-width: 6px }
+.plan-card .t { font-weight: 700; font-size: 18px }
+.plan-card .d { color: var(--muted); font-size: 15px }
+.plan-card .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px }
+.tag { font-size: 13px; padding: 2px 8px; border-radius: 6px; background: var(--tone-soft); color: var(--fg) }
+.tag.w { background: var(--warn-soft) }
+.tag.last { background: transparent; border: 1px solid var(--line); color: var(--muted) }
+.empty { background: var(--card); border: 1.5px dashed var(--line); border-radius: 14px; padding: 14px 16px; color: var(--muted); font-size: 15px }
+
+.plan-view { display: flex; flex-direction: column; gap: 14px }
+.back { align-self: flex-start; min-height: 44px; border: 0; background: transparent; color: var(--tone); font-weight: 700; cursor: pointer; padding: 0 }
+.plan-head { display: flex; flex-direction: column; gap: 6px }
+.plan-head h2 { margin: 0; font-size: 26px }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.btn { min-height: 46px; padding: 8px 16px; border-radius: 12px; border: 1.5px solid var(--tone); background: var(--tone); color: var(--card); font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px }
+.btn.ghost { background: transparent; color: var(--tone) }
+.btn.done { background: var(--ok); border-color: var(--ok); color: var(--card) }
+.btn.danger { background: transparent; border-color: var(--warn); color: var(--warn) }
+.btn.wide { width: 100%; justify-content: center }
+.sec { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden }
+.sec-h { display: flex; justify-content: space-between; gap: 8px; padding: 10px 14px; background: var(--tone-soft); font-weight: 700 }
+.sec-h span { font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums }
+.item { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-top: 1px solid var(--line); cursor: pointer; text-align: start; width: 100%; background: transparent; border-inline: 0; border-bottom: 0 }
+.sec .item:first-of-type { border-top: 0 }
+.item .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline }
+.item .nm { font-weight: 700 }
+.item .ds { color: var(--muted); font-size: 14px; text-align: end; min-width: 0 }
+.alert { font-size: 14px; background: var(--warn-soft); border-inline-start: 3px solid var(--warn); padding: 6px 10px; border-radius: 6px; color: var(--fg) }
+.alert b { color: var(--warn) }
+.confirm { background: var(--warn-soft); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px }
+
+/* edit mode */
+.field { display: flex; flex-direction: column; gap: 4px }
+.field label { font-weight: 700; font-size: 15px }
+.inp { width: 100%; min-height: 46px; font-size: 16px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--card); color: var(--fg) }
+textarea.inp { min-height: 80px; resize: vertical }
+.inp:focus { border-color: var(--tone) }
+.bk-remind { background: var(--card); border: 1.5px solid var(--tone); border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; display: grid; gap: 10px }
+.bk-remind p { margin: 0 }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+.locked .tabs, .locked .switch, .locked .brand .small-btn { display: none }
+.lock { max-width: 380px; margin: 48px auto 0; display: grid; gap: 14px; text-align: center }
+.lock p { margin: 0; color: var(--muted) }
+.lock form { display: grid; gap: 14px }
+.app-foot { margin: 28px 0 8px; padding-top: 14px; border-top: 1px solid var(--line, #ddd); display: grid; gap: 8px; justify-items: center; text-align: center; font-size: 14px; color: var(--muted) }
+.app-foot p { margin: 0 }
+.app-foot .linkish { min-height: 32px }
+.rules { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 10px }
+.rules li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; align-items: start; line-height: 1.5 }
+.rules .ok { color: var(--tone); font-weight: 700 }
+.rules .no { color: #b3261e; font-weight: 700 }
+.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--tone); text-decoration: underline; cursor: pointer }
+.lock .err { color: var(--warn); font-weight: 700; min-height: 1.4em }
+.sec-edit { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px }
+.sec-edit .sec-row { display: grid; grid-template-columns: 1fr 84px auto; gap: 8px; align-items: center }
+.ed-item { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px }
+.ed-item .nm { font-weight: 700; background: none; border: 0; padding: 0; text-align: start; cursor: pointer; color: var(--fg) }
+.ed-item .ctl { display: grid; grid-template-columns: 1fr repeat(4, 44px); gap: 6px; align-items: center }
+.icon-btn { min-height: 44px; min-width: 44px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; cursor: pointer; font-size: 16px }
+.icon-btn:disabled { opacity: .35; cursor: default }
+
+.search { width: 100%; min-height: 46px; font-size: 16px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--card); color: var(--fg) }
+.lib { display: grid; gap: 8px }
+.ex { background: var(--card); border: 1px solid var(--line); border-radius: 12px }
+.count { font-size: 14px; color: var(--muted) }
+.own-badge { font-size: 12px; font-weight: 700; color: var(--tone); border: 1px solid var(--tone); border-radius: 6px; padding: 0 6px; margin-inline-start: 6px }
+.vid-badge { font-size: 12px; color: var(--muted); margin-inline-start: 6px }
+
+.guide { display: flex; flex-direction: column; gap: 12px }
+.disclaimer { font-size: 14px; background: var(--card); border: 1px dashed var(--warn); border-radius: 12px; padding: 10px 14px }
+details.pop { background: var(--card); border: 1px solid var(--line); border-radius: 14px }
+details.pop summary { cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: 18px; list-style: none; display: flex; justify-content: space-between; gap: 8px }
+details.pop summary::after { content: "+"; color: var(--tone); font-size: 22px; line-height: 1 }
+details.pop[open] summary::after { content: "–" }
+details.tips { margin-bottom: 14px }
+details.tips h4 { margin: 10px 0 4px }
+details.tips ul { margin: 0; padding-inline-start: 20px }
+.pop-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px }
+.pop-body h3 { margin: 6px 0 0; font-size: 15px; color: var(--tone) }
+.pop-body ul { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px }
+.links { display: flex; flex-wrap: wrap; gap: 6px }
+.link { min-height: 36px; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 14px }
+.link.barre { border-color: var(--accent) }
+.link.mat { border-color: var(--mat) }
+
+.sheet-bg { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; justify-content: center }
+.sheet { background: var(--card); width: 100%; max-width: 720px; max-height: 90%; overflow: auto; overscroll-behavior: contain; border-radius: 18px 18px 0 0;
+  padding: 18px max(18px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: 12px }
+.sheet h3 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0 }
+.sheet .en { color: var(--muted); margin-top: -8px }
+.sheet h4 { margin: 4px 0 0; font-size: 15px; color: var(--tone) }
+.sheet ul { margin: 0; padding-inline-start: 20px }
+.sheet p { margin: 0 }
+.video { border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px; text-align: center; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 10px; align-items: center }
+.video video { width: 100%; max-height: 60vh; border-radius: 10px; background: #000 }
+.close { align-self: flex-start; min-height: 44px; border: 0; background: transparent; color: var(--tone); font-weight: 700; cursor: pointer; padding: 0 }
+.pick { display: flex; flex-direction: column; gap: 6px }
+.pick button { text-align: start; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column }
+.pick button small { color: var(--muted) }
+.file-btn { position: relative; overflow: hidden }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer }
+.note-local { font-size: 13px; color: var(--muted) }
+
+.class-mode { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow: auto; overscroll-behavior: contain;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(30px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)) }
+.class-mode .cm-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap }
+.class-mode .cm-sec { font-family: var(--font-display); font-size: 24px; margin: 18px 0 6px; color: var(--tone) }
+.class-mode .cm-it { font-size: 26px; font-weight: 700; padding: 10px 0; border-bottom: 1px solid var(--line); line-height: 1.25 }
+.class-mode .cm-it small { display: block; font-size: 18px; font-weight: 400; color: var(--muted) }
+.class-mode .cm-it .alert { font-size: 17px; margin-top: 6px; font-weight: 400 }
+.wl { font-size: 13px; color: var(--muted) }
+.toast { position: fixed; z-index: 60; inset-inline: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; max-width: 420px; background: var(--fg); color: var(--bg); border-radius: 12px; padding: 10px 14px; text-align: center; font-weight: 600 }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+.vmeter { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 4px 0 0 }
+.vmeter span { display: block; height: 100%; background: var(--tone) }
+.vmeter.full span { background: #b3412e }
+.share-row { margin-top: 8px }
+#print-area { display: none }
+@media print {
+  body > *:not(#print-area) { display: none !important }
+  body { background: #fff !important }
+  #print-area { display: block; color: #000; font-size: 13pt; line-height: 1.5 }
+  #print-area h1 { font-size: 20pt; margin: 0 0 2pt }
+  #print-area .sub { color: #444; margin: 0 0 8pt }
+  #print-area h2 { font-size: 14pt; margin: 14pt 0 4pt; padding-bottom: 2pt; border-bottom: 1px solid #999; display: flex; justify-content: space-between }
+  #print-area ul { list-style: none; padding: 0; margin: 0 }
+  #print-area li { margin: 3pt 0; display: flex; justify-content: space-between; gap: 12pt; break-inside: avoid }
+  #print-area li span:first-child::before { content: "☐  " }
+}
+</style>
+
+<div class="app" dir="rtl" lang="he">
+  <header>
+    <div class="brand"><h1>הסטודיו של שי</h1><button type="button" class="small-btn" data-a="backup">גיבוי</button></div>
+    <div class="switch" role="group" aria-label="סוג שיעור">
+      <button type="button" id="mode-barre" data-mode="barre">פילאטיס בר</button>
+      <button type="button" id="mode-mat" data-mode="mat">פילאטיס מזרון</button>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="מסכים" dir="rtl">
+  <button type="button" role="tab" id="tab-plans" data-tab="plans">מערכים</button>
+  <button type="button" role="tab" id="tab-lib" data-tab="lib">תרגילים</button>
+  <button type="button" role="tab" id="tab-guide" data-tab="guide">אוכלוסיות</button>
+</nav>
+<div id="overlay" dir="rtl"></div>
+<div id="toast-wrap" dir="rtl" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== Boot: sign in, get the content from the cloud (Supabase project "shai-studio"), then start the app.
+   - Built-in content (POP, GUIDE, BARRE_TIPS, EX, PLANS) lives in table "content".
+   - Shai's own plans / exercises / "taught today" live in "plans", "exercises", "taught".
+   - The phone keeps a working copy (localStorage "shai_db") and a copy of what the cloud has ("shai_synced").
+     Every save sends only the difference. Offline: the app works from the copies and sends later.
+   - First run on this computer (localhost with data.js): if the cloud is empty, data.js is uploaded once. ===== */
+(function () {
+  const SB_URL = "https://fzwnsoektgpfawpmneei.supabase.co";
+  const SB_KEY = "sb_publishable_vxAzEuHhiA1jH3oZZtigDg_80Pex3Ez";   // public key, safe in the browser (tables are locked with RLS)
+  const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const main = document.getElementById("main");
+  const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+               set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
+  const addScript = text => { const s = document.createElement("script"); s.textContent = text; document.body.appendChild(s); };
+  const loadScript = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+  const say = (html) => { document.body.classList.add("locked"); main.innerHTML = `<div class="lock">${html}</div>`; };
+  let started = false;
+  const startApp = () => { if (started) return; started = true; document.body.classList.remove("locked"); addScript(document.getElementById("app-code").textContent); };
+
+  if (!window.supabase) { say(`<h2>אין חיבור</h2><p>צריך אינטרנט כדי לפתוח את האפליקציה בפעם הראשונה. נסי שוב בעוד רגע.</p>`); return; }
+  const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "shai_sb_auth" } });
+
+  /* ---- Sync: compare the working copy with the cloud copy and send only what changed ---- */
+  const snapOf = db => {
+    const s = { p: {}, e: {}, t: {} };
+    (db.plans || []).forEach((p, i) => { s.p[p.id] = JSON.stringify([p, i]); });
+    Object.values(db.ex || {}).forEach(x => { s.e[x.id] = JSON.stringify(x); });
+    Object.entries(db.log || {}).forEach(([pid, days]) => (days || []).forEach(d => { s.t[pid + "|" + d] = 1; }));
+    return s;
+  };
+  let busy = false, again = false, timer = null;
+  async function syncNow() {
+    if (busy) { again = true; return; }
+    busy = true;
+    try {
+      const db = ls.get("shai_db", { plans: [], ex: {}, log: {} });
+      const cur = snapOf(db), old = ls.get("shai_synced", { p: {}, e: {}, t: {} });
+      const upP = [], upE = [], addT = [], delT = [];
+      for (const id in cur.p) if (cur.p[id] !== old.p[id]) { const [p, i] = JSON.parse(cur.p[id]); upP.push({ id, data: p, sort: i, deleted: false }); }
+      for (const id in old.p) if (!(id in cur.p)) upP.push({ id, data: JSON.parse(old.p[id])[0], sort: 0, deleted: true });
+      for (const id in cur.e) if (cur.e[id] !== old.e[id]) upE.push({ id, data: JSON.parse(cur.e[id]), deleted: false });
+      for (const id in old.e) if (!(id in cur.e)) upE.push({ id, data: JSON.parse(old.e[id]), deleted: true });
+      for (const k in cur.t) if (!old.t[k]) { const i = k.lastIndexOf("|"); addT.push({ plan_id: k.slice(0, i), day: k.slice(i + 1) }); }
+      for (const k in old.t) if (!cur.t[k]) delT.push(k);
+      if (!upP.length && !upE.length && !addT.length && !delT.length) return true;
+      const chk = r => { if (r.error) throw r.error; };
+      if (upP.length) chk(await sb.from("plans").upsert(upP));
+      if (upE.length) chk(await sb.from("exercises").upsert(upE));
+      if (addT.length) chk(await sb.from("taught").upsert(addT, { onConflict: "plan_id,day", ignoreDuplicates: true }));
+      for (const k of delT) { const i = k.lastIndexOf("|"); chk(await sb.from("taught").delete().match({ plan_id: k.slice(0, i), day: k.slice(i + 1) })); }
+      ls.set("shai_synced", cur);
+      return true;
+    } catch (e) { console.warn("[shai] sync failed, will retry", e); return false; }
+    finally { busy = false; if (again) { again = false; setTimeout(syncNow, 300); } }
+  }
+  window.CLOUD = {
+    sync() { clearTimeout(timer); timer = setTimeout(syncNow, 700); },
+    async signOut() { await syncNow(); await sb.auth.signOut(); ["shai_synced", "shai_db", "shai_content"].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); location.reload(); },
+    email: "",
+    sb,
+  };
+  window.addEventListener("online", () => CLOUD.sync());
+
+  /* ---- Content ---- */
+  function useContent(c) { ["POP", "GUIDE", "BARRE_TIPS", "EX", "PLANS"].forEach(k => { window[k] = c[k]; }); }
+  async function seedFromDataJs() {
+    await loadScript("data.js");   // defines POP, GUIDE, BARRE_TIPS, EX, PLANS
+    const rows = [["POP", POP], ["GUIDE", GUIDE], ["BARRE_TIPS", typeof BARRE_TIPS !== "undefined" ? BARRE_TIPS : []], ["EX", EX], ["PLANS", PLANS]].map(([key, data]) => ({ key, data }));
+    const r = await sb.from("content").upsert(rows); if (r.error) throw r.error;
+    return Object.fromEntries(rows.map(r => [r.key, JSON.parse(JSON.stringify(r.data))]));
+  }
+
+  async function loadAndStart() {
+    say(`<p>טוען...</p>`);
+    await syncNow();   // send what was changed here before taking the cloud copy
+    let content = null, cloud = null;
+    try {
+      const [c, p, x, t] = await Promise.all([
+        sb.from("content").select("key,data"),
+        sb.from("plans").select("id,data,sort").eq("deleted", false).order("sort"),
+        sb.from("exercises").select("id,data").eq("deleted", false),
+        sb.from("taught").select("plan_id,day").order("day"),
+      ]);
+      [c, p, x, t].forEach(r => { if (r.error) throw r.error; });
+      content = Object.fromEntries(c.data.map(r => [r.key, r.data]));
+      cloud = { plans: p.data.map(r => r.data), ex: {}, log: {} };
+      x.data.forEach(r => { cloud.ex[r.id] = r.data; });
+      t.data.forEach(r => { (cloud.log[r.plan_id] = cloud.log[r.plan_id] || []).push(r.day); });
+    } catch (e) { console.warn("[shai] offline or cloud error", e); }
+
+    if (content && !content.EX) {
+      if (!LOCAL) { say(`<h2>עוד רגע</h2><p>התוכן עוד לא הועלה לענן. גיא צריך לפתוח את האפליקציה פעם אחת מהמחשב.</p>`); return; }
+      try { content = await seedFromDataJs(); } catch (e) { console.error(e); say(`<h2>ההעלאה לענן נכשלה</h2><p>נסו שוב.</p>`); return; }
+    }
+    if (content) { ls.set("shai_content", content); }
+    else { content = ls.get("shai_content", null); if (!content) { say(`<h2>אין חיבור</h2><p>צריך אינטרנט כדי לפתוח את האפליקציה בפעם הראשונה. נסי שוב בעוד רגע.</p>`); return; } }
+    if (!window.POP) useContent(content);   // data.js (seed) already defined them
+
+    if (cloud) {   // the cloud is the truth; keep this device's view settings
+      const local = ls.get("shai_db", {});
+      ls.set("shai_db", Object.assign({}, local, { v: 1, plans: cloud.plans, ex: cloud.ex, log: cloud.log }));
+      ls.set("shai_synced", snapOf(cloud));
+    }
+    startApp();
+  }
+
+  function loginScreen(msg) {
+    say(`<form id="login-form">
+      <h2>ברוכה הבאה</h2>
+      <p>נכנסים פעם אחת, והטלפון יזכור.</p>
+      <label for="login-email" class="sr-only">מייל</label>
+      <input class="inp" id="login-email" type="email" autocomplete="username" inputmode="email" dir="ltr" placeholder="מייל" required>
+      <label for="login-pass" class="sr-only">סיסמה</label>
+      <input class="inp" id="login-pass" type="password" autocomplete="current-password" dir="ltr" placeholder="סיסמה" required>
+      <button class="btn wide" type="submit">כניסה</button>
+      <div class="err" role="alert">${msg || ""}</div></form>`);
+    const form = document.getElementById("login-form");
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const btn = form.querySelector("button"), err = form.querySelector(".err");
+      btn.disabled = true; btn.textContent = "נכנסת..."; err.textContent = "";
+      const { data, error } = await sb.auth.signInWithPassword({ email: document.getElementById("login-email").value.trim().toLowerCase(), password: document.getElementById("login-pass").value });
+      if (error) { btn.disabled = false; btn.textContent = "כניסה"; err.textContent = /invalid/i.test(error.message) ? "המייל או הסיסמה לא נכונים. נסי שוב." : "אין חיבור לאינטרנט. נסי שוב בעוד רגע."; return; }
+      CLOUD.email = data.user.email; loadAndStart();
+    });
+  }
+
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) { CLOUD.email = data.session.user.email; loadAndStart(); }
+    else loginScreen();
+  }).catch(() => loginScreen());
+})();
+</script>
+<script id="app-code" type="text/plain">
+/* ===== Storage: everything Shai creates lives on this device (localStorage + IndexedDB for videos) ===== */
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } } };
+const DB = Object.assign({ v: 1, plans: [], ex: {}, log: {} }, store.get("shai_db", {}));
+const BUILTIN_EX = new Set(Object.keys(EX));
+Object.assign(EX, DB.ex);
+function save() {
+  if (!store.set("shai_db", DB)) toast("השמירה נכשלה. אולי הזיכרון בטלפון מלא.");
+  const b = store.get("shai_bk", {}); if (!b.dirty) store.set("shai_bk", { at: b.at || Date.now(), dirty: true });
+  if (window.CLOUD) CLOUD.sync();   // send the change to the cloud (retries later if offline)
+}
+/* Backup reminder: "at" = last backup (or first change), "dirty" = changed since then. Shown after 14 days, "later" hides it for 3 days. */
+const BK_DAYS = 14;
+function markBackedUp() { store.set("shai_bk", { at: Date.now(), dirty: false }); store.set("shai_bk_snooze", 0); }
+function needsBackup() {
+  if (window.CLOUD) return false;   // everything is saved in the cloud now
+  const b = store.get("shai_bk", {});
+  return !!(b.dirty && b.at && Date.now() - b.at > BK_DAYS * 864e5 && Date.now() > (store.get("shai_bk_snooze", 0) || 0));
+}
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+const VID = {
+  db: null,
+  open() { if (this.db) return Promise.resolve(this.db); return new Promise((res, rej) => { try { const r = indexedDB.open("shai-videos", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("v"); r.onsuccess = () => { this.db = r.result; res(this.db); }; r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); },
+  async tx(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction("v", mode); const req = fn(t.objectStore("v")); t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); }); },
+  get(id) { return this.tx("readonly", s => s.get(id)); },
+  put(id, blob) { return this.tx("readwrite", s => s.put(blob, id)); },
+  del(id) { return this.tx("readwrite", s => s.delete(id)); },
+  keys() { return this.tx("readonly", s => s.getAllKeys()); },
+};
+let videoIds = new Set();
+VID.keys().then(k => { videoIds = new Set(k || []); if (S.tab === "lib") render(); }).catch(() => {});
+
+/* ===== Videos in the cloud (private Supabase bucket "videos", one file per exercise id) =====
+   This device keeps a copy in IndexedDB (works offline). shai_vid_meta[id]:
+   "" = waiting to upload · "big" = too big for the cloud, kept here only · otherwise = the cloud copy's updated_at. */
+const VMAX = 50 * 1024 * 1024;
+const VSYNC = {
+  meta: store.get("shai_vid_meta", {}),
+  dels: store.get("shai_vid_del", []),
+  cloud: null,   // Map id -> updated_at, after the first successful listing
+  p: Promise.resolve(),
+  keep() { store.set("shai_vid_meta", this.meta); store.set("shai_vid_del", this.dels); },
+  ok: id => /^[A-Za-z0-9_-]{1,200}$/.test(id),
+  bucket: () => CLOUD.sb.storage.from("videos"),
+  async list() {
+    const out = new Map(), sizes = new Map();
+    for (let off = 0; ; off += 1000) {
+      const r = await this.bucket().list("", { limit: 1000, offset: off });
+      if (r.error) throw r.error;
+      r.data.forEach(o => { if (o.id) { out.set(o.name, o.updated_at || o.created_at || "x"); sizes.set(o.name, (o.metadata && o.metadata.size) || 0); } });
+      if (r.data.length < 1000) break;
+    }
+    this.sizes = sizes;
+    return out;
+  },
+  run() { if (!window.CLOUD) return Promise.resolve(); return (this.p = this.p.then(() => this._run()).catch(e => console.warn("[shai] video sync failed, will retry", e))); },
+  async _run() {
+    if (navigator.onLine === false) return;
+    for (const id of [...this.dels]) {   // deletions made here
+      const r = await this.bucket().remove([id]); if (r.error) throw r.error;
+      this.dels = this.dels.filter(x => x !== id); this.keep();
+    }
+    let local = new Set(await VID.keys().catch(() => []));
+    for (const id of local) {   // copies on this device that never reached the cloud (incl. videos from before the cloud)
+      if (!this.ok(id) || (this.meta[id] && this.meta[id] !== "full")) continue;
+      const blob = await VID.get(id); if (!blob) continue;
+      if (blob.size > VMAX) { this.meta[id] = "big"; this.keep(); continue; }
+      if (this.cloud) { const u = this.usage(); if (u.bytes - (this.sizes.get(id) || 0) + blob.size > VLIMIT) { this.meta[id] = "full"; this.keep(); continue; } }
+      const r = await this.bucket().upload(id, blob, { upsert: true, contentType: blob.type || "video/mp4", cacheControl: "31536000" });
+      if (r.error) { if (/maximum|too large|413/i.test(r.error.message + " " + r.error.statusCode)) { this.meta[id] = "big"; this.keep(); continue; } throw r.error; }
+      this.meta[id] = "up"; this.keep();
+    }
+    const cloud = await this.list(); this.cloud = cloud;
+    for (const id of local) {
+      const m = this.meta[id]; if (!m || m === "big" || m === "full") continue;
+      if (!cloud.has(id)) { if (m !== "up") { await VID.del(id).catch(() => {}); delete this.meta[id]; } }   // deleted on the other phone
+      else if (m === "up") this.meta[id] = cloud.get(id);
+      else if (m !== cloud.get(id)) { await VID.del(id).catch(() => {}); delete this.meta[id]; }   // replaced on the other phone: download again when opened
+    }
+    this.keep();
+    local = new Set(await VID.keys().catch(() => []));
+    const next = new Set([...local, ...cloud.keys()]);
+    const changed = next.size !== videoIds.size || [...next].some(id => !videoIds.has(id));
+    videoIds = next;
+    if (changed || vidAlmostFull()) render();
+  },
+  async blob(id, onDownload) {   // this device's copy, or download from the cloud once and keep it
+    let b = await VID.get(id).catch(() => null);
+    if (b || !window.CLOUD || !this.ok(id)) return b;
+    if (onDownload) onDownload();
+    const r = await this.bucket().download(id); if (r.error) throw r.error;
+    b = r.data;
+    try { await VID.put(id, b); this.meta[id] = (this.cloud && this.cloud.get(id)) || "x"; this.keep(); } catch (e) {}   // phone full: just play it
+    return b;
+  },
+  async remove(id) {
+    await VID.del(id).catch(() => {});
+    videoIds.delete(id);
+    if (window.CLOUD && this.ok(id)) { delete this.meta[id]; if (!this.dels.includes(id)) this.dels.push(id); if (this.cloud) this.cloud.delete(id); this.sizes.delete(id); this.keep(); this.run(); }
+  },
+  async add(id) {   // the file is already in this device's copy (VID.put)
+    videoIds.add(id);
+    if (window.CLOUD && this.ok(id)) { this.dels = this.dels.filter(x => x !== id); this.meta[id] = ""; this.keep(); await this.run(); }
+  },
+  status(id) {   // short note under the video
+    if (!window.CLOUD) return "הסרטון נשמר רק בטלפון הזה.";
+    const m = this.meta[id];
+    if (!videoIds.has(id)) return "הסרטון יישמר בענן, ואפשר לראות אותו מכל טלפון.";
+    if (m === "big") return "הסרטון גדול מדי לענן ונשמר רק בטלפון הזה. כדאי להחליף בסרטון קצר יותר.";
+    if (m === "full") return "אין מספיק מקום בענן, ולכן הסרטון נשמר רק בטלפון הזה. כדאי להגיד לגיא.";
+    if (m === "") return "הסרטון יעלה לענן כשיהיה אינטרנט.";
+    return "הסרטון שמור בענן.";
+  },
+  sizes: new Map(),
+  usage() { let bytes = 0; this.sizes.forEach(s => { bytes += s; }); return { n: this.sizes.size, bytes }; },
+};
+const VLIMIT = 1024 * 1024 * 1024;   // Supabase free plan: 1GB of files
+const mb = b => b >= VLIMIT ? (b / VLIMIT).toFixed(1) + "GB" : Math.round(b / 1048576) + "MB";
+function vidMeter() {
+  if (!window.CLOUD || !VSYNC.cloud) return "";
+  const u = VSYNC.usage(), pct = Math.min(100, Math.round(u.bytes / VLIMIT * 100));
+  return `<p class="note-local">🎬 ${u.n} ${u.n === 1 ? "סרטון" : "סרטונים"} בענן · ${mb(u.bytes)} מתוך 1GB</p>
+    <div class="vmeter ${pct >= 80 ? "full" : ""}" role="img" aria-label="נוצלו ${pct}% מהמקום לסרטונים"><span style="width:${Math.max(pct, u.bytes ? 1 : 0)}%"></span></div>`;
+}
+function vidAlmostFull() { return !!(window.CLOUD && VSYNC.cloud && VSYNC.usage().bytes >= VLIMIT * 0.8); }
+if (window.CLOUD) { VSYNC.run(); window.addEventListener("online", () => VSYNC.run()); }
+
+/* ===== State ===== */
+const S = { mode: store.get("shai_mode", "barre"), tab: "plans", plan: null, edit: null, today: store.get("shai_today", []), q: "", area: "", sort: store.get("shai_sort", "default"), src: store.get("shai_src", "all"), confirm: null };
+const main = document.getElementById("main");
+const overlay = document.getElementById("overlay");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const safeUrl = u => { try { const x = new URL(u); return x.protocol === "https:" ? x.href : ""; } catch (e) { return ""; } };
+const allPlans = () => [...DB.plans, ...PLANS];
+const findPlan = id => allPlans().find(p => p.id === id);
+const isMine = p => !!(p && p.own);
+const AREAS = ["חימום","בטן","ישבן","רגליים","גב","ידיים וכתפיים","גמישות"];
+const GEAR = ["כדור קטן","גומייה","משקולות","טבעת","בר","בלוק או כרית","כיסא"];
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const ON_OWN_SITE = /^(localhost|127\.0\.0\.1)$|github\.io$/.test(location.hostname);
+
+function toast(msg) {
+  const w = document.getElementById("toast-wrap");
+  w.innerHTML = `<div class="toast">${esc(msg)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { w.innerHTML = ""; }, 2600);
+}
+function daysAgo(iso) { const d = Math.round((new Date(todayISO()) - new Date(iso)) / 864e5); return d <= 0 ? "היום" : d === 1 ? "אתמול" : `לפני ${d} ימים`; }
+function lastTaught(id) { const l = DB.log[id]; return l && l.length ? l[l.length - 1] : null; }
+
+/* ===== Small pieces ===== */
+function alertsFor(ex) { return S.today.filter(p => ex.x && ex.x[p]).map(p => `<div class="alert"><b>${POP[p]}:</b> ${esc(ex.x[p])}</div>`).join(""); }
+function todayBox() {
+  return `<div class="today"><b>יש היום בשיעור:</b>
+    <div class="chips">${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="today" data-id="${k}" aria-pressed="${S.today.includes(k)}">${v}</button>`).join("")}</div>
+    <span class="hint">בוחרים, ובכל תרגיל שצריך התאמה תופיע הערה עם החלופה.</span></div>`;
+}
+function planWarnCount(p) {
+  if (!S.today.length) return 0;
+  let n = 0; p.s.forEach(sec => sec[2].forEach(([id]) => { const ex = EX[id]; if (ex && S.today.some(k => ex.x && ex.x[k])) n++; }));
+  return n;
+}
+const planMins = p => p.s.reduce((a, s) => a + (Number(s[1]) || 0), 0);
+function planCard(p) {
+  const w = planWarnCount(p); const last = lastTaught(p.id);
+  return `<button type="button" class="plan-card ${isMine(p) ? "mine" : ""}" data-a="plan" data-id="${esc(p.id)}"><span class="t">${esc(p.n)}</span>${p.d ? `<span class="d">${esc(p.d)}</span>` : ""}
+    <span class="meta"><span class="tag">${planMins(p)} דק׳</span>${(p.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+    <span class="tag last">${last ? "הועבר " + daysAgo(last) : "עוד לא הועבר"}</span>${w ? `<span class="tag w">${w} תרגילים צריכים התאמה</span>` : ""}</span></button>`;
+}
+function itemRow(id, dose) {
+  const ex = EX[id]; if (!ex) return `<div class="item"><span class="nm">תרגיל שנמחק</span></div>`;
+  return `<button type="button" class="item" data-a="ex" data-id="${esc(id)}"><span class="top"><span class="nm">${esc(ex.n)}${videoIds.has(id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(dose || "")}</span></span>${alertsFor(ex)}</button>`;
+}
+
+/* ===== Plans ===== */
+function sortPlans(list) {
+  if (S.sort !== "oldest") return list;
+  return [...list].sort((a, b) => (lastTaught(a.id) || "0000") .localeCompare(lastTaught(b.id) || "0000"));
+}
+function viewPlans() {
+  if (S.edit) return viewEdit(findPlan(S.edit));
+  if (S.plan) return viewPlan(findPlan(S.plan));
+  const mine = sortPlans(DB.plans.filter(p => p.t === S.mode));
+  const all = PLANS.filter(p => p.t === S.mode);
+  const isShais = p => (p.tags || []).includes("של שי");
+  const nShai = all.filter(isShais).length;
+  const ready = sortPlans(S.src === "shai" ? all.filter(isShais) : S.src === "general" ? all.filter(p => !isShais(p)) : all);
+  const lead = S.mode === "barre" ? "מערכים מגוונים, עם דגש על העבודה ליד הבר. כל מערך בנוי ל־50–55 דקות." : "מערכים לשיעור מזרון. בכל תרגיל יש גרסה קלה וקשה, והתאמות למקרים מיוחדים.";
+  const tips = S.mode === "barre" && typeof BARRE_TIPS !== "undefined" ? `<details class="pop tips"><summary>טיפים לבר מהחוברת</summary><div class="pop-body">
+    ${BARRE_TIPS.map(([h, items]) => `<h4>${esc(h)}</h4><ul>${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`).join("")}</div></details>` : "";
+  const srcChips = nShai ? `<div class="chips" role="group" aria-label="אילו מערכים">${[["all", "הכול"], ["shai", "של שי"], ["general", "כלליים"]].map(([k, v]) =>
+    `<button type="button" class="chip f" data-a="src" data-id="${k}" aria-pressed="${(S.src || "all") === k}">${v}</button>`).join("")}</div>` : "";
+  return `${todayBox()}${tips}
+  <div class="chips" role="group" aria-label="סדר"><button type="button" class="chip f" data-a="sort" data-id="default" aria-pressed="${S.sort !== "oldest"}">סדר רגיל</button><button type="button" class="chip f" data-a="sort" data-id="oldest" aria-pressed="${S.sort === "oldest"}">מה שלא עשיתי הכי הרבה זמן</button></div>
+  <div class="list-head"><h2>המערכים שלי</h2><button type="button" class="btn ghost" data-a="new-plan">+ מערך חדש</button></div>
+  ${mine.length ? `<div class="plans">${mine.map(planCard).join("")}</div>` : `<div class="empty">עוד אין מערכים משלך. אפשר ללחוץ "מערך חדש", או לפתוח מערך מוכן וללחוץ "שכפול ועריכה".</div>`}
+  <h2>${S.mode === "barre" ? "מערכי בר מוכנים" : "מערכי מזרון מוכנים"}</h2><p class="lead">${lead}</p>
+  ${srcChips}
+  <div class="plans">${ready.length ? ready.map(planCard).join("") : `<div class="empty">אין כאן מערכים כרגע.</div>`}</div>`;
+}
+function viewPlan(p) {
+  if (!p) { S.plan = null; return viewPlans(); }
+  const last = lastTaught(p.id); const taughtToday = last === todayISO(); const times = (DB.log[p.id] || []).length;
+  const sp = safeUrl(p.sp || "");
+  return `<div class="plan-view"><button type="button" class="back" data-a="back">→ כל המערכים</button>
+  <div class="plan-head"><h2>${esc(p.n)}</h2><p class="lead">${p.d ? esc(p.d) + " · " : ""}${planMins(p)} דקות${isMine(p) ? " · מערך שלך" : ""}</p>
+  <p class="lead">${last ? `הועבר ${daysAgo(last)} · ${times} ${times === 1 ? "פעם" : "פעמים"} בסך הכול` : "עוד לא הועבר"}</p>
+  <div class="row">
+    <button type="button" class="btn" data-a="class">מצב שיעור</button>
+    <button type="button" class="btn ${taughtToday ? "done" : "ghost"}" data-a="taught">${taughtToday ? "✓ הועבר היום" : "העברתי היום"}</button>
+    ${isMine(p) ? `<button type="button" class="btn ghost" data-a="edit">עריכה</button>` : `<button type="button" class="btn ghost" data-a="dup">שכפול ועריכה</button>`}
+    ${sp ? `<a class="btn ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}
+  </div>
+  <div class="row share-row"><button type="button" class="btn ghost" data-a="share">📤 שיתוף</button><button type="button" class="btn ghost" data-a="print">🖨️ הדפסה</button></div></div>
+  ${todayBox()}
+  ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d)).join("") || `<div class="item"><span class="hint">אין עדיין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
+  <p class="lead">לוחצים על תרגיל כדי לראות הסבר, גרסאות, התאמות וסרטון.</p></div>`;
+}
+
+/* ===== Share / print a plan ===== */
+function planText(p) {   // WhatsApp-friendly (*bold*)
+  const out = [`*${p.n}* · ${planMins(p)} דק׳`];
+  if (p.d) out.push(p.d);
+  p.s.forEach(([name, m, items]) => {
+    out.push("", `*${name}*${m ? ` · ${m} דק׳` : ""}`);
+    items.forEach(([id, d]) => { const e = EX[id]; if (e) out.push(`• ${e.n}${d ? " – " + d : ""}`); });
+  });
+  return out.join("\n");
+}
+async function sharePlan(p) {
+  const text = planText(p);
+  if (navigator.share) {
+    try { await navigator.share({ title: p.n, text }); return; }
+    catch (err) { if (err && err.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(text); toast("המערך הועתק. אפשר להדביק בוואטסאפ."); }
+  catch (err) { toast("לא הצלחתי לשתף. נסי שוב."); }
+}
+function printPlan(p) {
+  let box = document.getElementById("print-area");
+  if (!box) { box = document.createElement("div"); box.id = "print-area"; box.dir = "rtl"; document.body.appendChild(box); }
+  box.innerHTML = `<h1>${esc(p.n)}</h1><p class="sub">${p.d ? esc(p.d) + " · " : ""}${planMins(p)} דקות · ${S.mode === "barre" ? "בר" : "מזרון"}</p>
+    ${p.s.map(([name, m, items]) => `<h2><span>${esc(name)}</span><span>${m ? esc(m) + " דק׳" : ""}</span></h2>
+      <ul>${items.map(([id, d]) => EX[id] ? `<li><span>${esc(EX[id].n)}</span><span>${esc(d || "")}</span></li>` : "").join("")}</ul>`).join("")}`;
+  try { window.print(); } catch (err) { toast("ההדפסה לא זמינה כאן."); }
+}
+
+/* ===== Edit a plan (only Shai's own) ===== */
+function viewEdit(p) {
+  if (!p || !isMine(p)) { S.edit = null; return viewPlans(); }
+  const c = S.confirm === "del-plan";
+  return `<div class="plan-view"><button type="button" class="back" data-a="end-edit">→ סיום עריכה</button>
+  <h2 style="margin:0">עריכת מערך</h2>
+  <p class="note-local">כל שינוי נשמר מיד, במכשיר הזה.</p>
+  <div class="field"><label for="f-name">שם המערך</label><input class="inp" id="f-name" data-f="n" value="${esc(p.n)}"></div>
+  <div class="field"><label for="f-desc">כמה מילים על המערך</label><input class="inp" id="f-desc" data-f="d" value="${esc(p.d || "")}" placeholder="למשל: ישבן בפוקוס, עם גומייה"></div>
+  <div class="field"><label for="f-sp">קישור לפלייליסט בספוטיפיי</label><input class="inp" id="f-sp" data-f="sp" value="${esc(p.sp || "")}" placeholder="https://open.spotify.com/..." inputmode="url" dir="ltr"></div>
+  ${p.s.map((sec, si) => `<div class="sec-edit">
+    <div class="sec-row"><input class="inp" id="f-sec-${si}" data-f="sec-name" data-si="${si}" value="${esc(sec[0])}" aria-label="שם החלק">
+      <input class="inp" id="f-min-${si}" data-f="sec-min" data-si="${si}" value="${esc(sec[1])}" inputmode="numeric" aria-label="דקות">
+      <button type="button" class="icon-btn" data-a="sec-del" data-si="${si}" aria-label="מחיקת החלק">✕</button></div>
+    ${sec[2].map(([id, d], ii) => { const ex = EX[id];
+      return `<div class="ed-item"><button type="button" class="nm" data-a="ex" data-id="${esc(id)}">${ex ? esc(ex.n) : "תרגיל שנמחק"}</button>${ex ? alertsFor(ex) : ""}
+      <div class="ctl"><input class="inp" id="f-dose-${si}-${ii}" data-f="dose" data-si="${si}" data-ii="${ii}" value="${esc(d || "")}" placeholder="חזרות / זמן" aria-label="חזרות או זמן">
+        <button type="button" class="icon-btn" data-a="up" data-si="${si}" data-ii="${ii}" aria-label="למעלה" ${ii === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" class="icon-btn" data-a="down" data-si="${si}" data-ii="${ii}" aria-label="למטה" ${ii === sec[2].length - 1 ? "disabled" : ""}>↓</button>
+        <button type="button" class="icon-btn" data-a="swap" data-si="${si}" data-ii="${ii}" aria-label="החלפה בתרגיל אחר">⇄</button>
+        <button type="button" class="icon-btn" data-a="item-del" data-si="${si}" data-ii="${ii}" aria-label="הסרה">✕</button></div></div>`; }).join("")}
+    <button type="button" class="btn ghost" data-a="add-item" data-si="${si}">+ תרגיל</button>
+  </div>`).join("")}
+  <button type="button" class="btn ghost wide" data-a="add-sec">+ חלק חדש בשיעור</button>
+  ${todayBox()}
+  ${c ? `<div class="confirm"><b>למחוק את המערך "${esc(p.n)}"?</b><span>אי אפשר לבטל את זה.</span><div class="row"><button type="button" class="btn danger" data-a="del-plan-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="cancel">ביטול</button></div></div>`
+      : `<button type="button" class="btn danger" data-a="del-plan">מחיקת המערך</button>`}
+  </div>`;
+}
+function newPlan(from) {
+  const base = from ? JSON.parse(JSON.stringify(from)) : { t: S.mode, n: "מערך חדש", d: "", tags: [], s: [["חימום", 6, []], ["חלק מרכזי", 35, []], ["מתיחות", 6, []]] };
+  const p = Object.assign(base, { id: uid("u-p-"), own: true, n: from ? from.n + " (שלי)" : base.n });
+  delete p.from; if (from) p.from = from.id;
+  DB.plans.unshift(p); save(); return p;
+}
+
+/* ===== Library ===== */
+function viewLib() {
+  const q = S.q.trim();
+  const list = Object.values(EX).filter(e => e.t === S.mode && (!S.area || e.a === S.area) && (!q || e.n.includes(q) || (e.en || "").toLowerCase().includes(q.toLowerCase())))
+    .sort((a, b) => (b.own ? 1 : 0) - (a.own ? 1 : 0));
+  return `${todayBox()}<div class="list-head"><h2>תרגילי ${S.mode === "barre" ? "בר" : "מזרון"}</h2><button type="button" class="btn ghost" data-a="new-ex">+ תרגיל משלי</button></div>
+  <input class="search" id="lib-q" type="search" placeholder="חיפוש תרגיל" value="${esc(S.q)}" aria-label="חיפוש תרגיל">
+  <div class="chips">${["", ...AREAS].map(a => `<button type="button" class="chip f" data-a="area" data-id="${a}" aria-pressed="${S.area === a}">${a || "הכול"}</button>`).join("")}</div>
+  <span class="count">${list.length} תרגילים</span>
+  <div class="lib">${list.map(e => `<div class="ex"><button type="button" class="item" data-a="ex" data-id="${esc(e.id)}"><span class="top"><span class="nm">${esc(e.n)}${e.own ? '<span class="own-badge">שלי</span>' : ""}${videoIds.has(e.id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}</span></span>${alertsFor(e)}</button></div>`).join("")}</div>`;
+}
+
+/* ===== Guide ===== */
+function exLink(id) { const e = EX[id]; return e ? `<button type="button" class="link ${e.t}" data-a="ex" data-id="${id}">${esc(e.n)}${e.t === "barre" ? " (בר)" : ""}</button>` : ""; }
+function viewGuide() {
+  return `<h2>אוכלוסיות מיוחדות</h2>
+  <div class="disclaimer">מידע כללי שמבוסס על המלצות מקובלות, ולא ייעוץ רפואי. מתאמנת עם מצב רפואי צריכה אישור מרופא או מפיזיותרפיסטית. ההחלטה המקצועית בשיעור היא שלך.</div>
+  <div class="guide">${Object.entries(GUIDE).map(([k, g]) => `<details class="pop" ${k === "preg" ? "open" : ""}><summary>${g.title}</summary><div class="pop-body">
+    <p class="lead">${esc(g.intro)}</p>
+    ${g.positions ? `<h3>עמדות ותרגילים שאפשר לעשות</h3>${g.positions.map(([t, ids]) => `<div><b>${esc(t)}</b><div class="links">${ids.map(exLink).join("")}</div></div>`).join("")}` : ""}
+    ${g.prefer ? `<h3>מה כן</h3><ul>${g.prefer.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    <h3>ממה להימנע</h3><ul>${g.avoid.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+    ${g.picks ? `<h3>תרגילים טובים להתחיל מהם</h3><div class="links">${g.picks.map(exLink).join("")}</div>` : ""}
+    ${g.stop.length ? `<h3>מתי לעצור</h3><ul>${g.stop.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+  </div></details>`).join("")}</div>`;
+}
+
+function render() {
+  document.body.className = "mode-" + S.mode;
+  document.getElementById("mode-barre").setAttribute("aria-pressed", S.mode === "barre");
+  document.getElementById("mode-mat").setAttribute("aria-pressed", S.mode === "mat");
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === S.tab));
+  main.innerHTML = S.tab === "plans" ? viewPlans() : S.tab === "lib" ? viewLib() : viewGuide();
+  if (S.tab === "plans" && !S.plan && !S.edit && needsBackup()) main.insertAdjacentHTML("afterbegin",
+    `<div class="bk-remind" role="status"><p><b>הגיע הזמן לגיבוי.</b> עברו יותר משבועיים, ויש שינויים שנשמרו רק בטלפון הזה.</p>
+     <div class="row"><button type="button" class="btn" data-a="backup">גיבוי עכשיו</button><button type="button" class="btn ghost" data-a="bk-later">אחר כך</button></div></div>`);
+  if (S.tab === "plans" && !S.plan && !S.edit && vidAlmostFull()) main.insertAdjacentHTML("afterbegin",
+    `<div class="bk-remind" role="status"><p><b>⚠️ המקום לסרטונים בענן כמעט מלא</b> (${mb(VSYNC.usage().bytes)} מתוך 1GB). כדאי להגיד לגיא.</p>${vidMeter()}</div>`);
+  if (!S.plan && !S.edit) main.insertAdjacentHTML("beforeend", `<footer class="app-foot">
+    ${window.CLOUD ? `<p>💡 יש לך הצעה לשיפור? <button type="button" class="linkish" data-a="idea">כתבי כאן</button></p>` : ""}
+    <p><button type="button" class="linkish" data-a="privacy">מה מותר לכתוב כאן</button></p></footer>`);
+}
+
+/* Privacy rules: shown once after the first sign-in, and always from the footer link */
+function openPrivacy(first) {
+  sheetCtx = { kind: "privacy" };
+  sheet(`<h3 id="sheet-title">שומרים על המתאמנות</h3>
+    <ul class="rules">
+      <li><span class="ok" aria-hidden="true">✓</span><span><b>מותר:</b> מערכים, תרגילים, התאמות כלליות (למשל "גב תחתון")</span></li>
+      <li><span class="no" aria-hidden="true">✗</span><span><b>אסור:</b> שמות של מתאמנות, פרטים אישיים, מידע רפואי עליהן</span></li>
+    </ul>
+    ${first ? `<button type="button" class="btn wide" data-a="privacy-ok">הבנתי</button>` : ""}`);
+}
+/* Improvement ideas: saved to the "suggestions" table, Claude reads them */
+function openIdea() {
+  sheetCtx = { kind: "idea" };
+  sheet(`<h3 id="sheet-title">💡 הצעה לשיפור</h3>
+    <label for="idea-text" class="note-local">מה חסר, מה מעצבן, מה היה עוזר?</label>
+    <textarea class="inp" id="idea-text" maxlength="2000" style="min-height:120px"></textarea>
+    <button type="button" class="btn wide" data-a="idea-send">שליחה</button>`);
+  setTimeout(() => { const t = document.getElementById("idea-text"); if (t) t.focus(); }, 50);
+}
+
+/* ===== Sheets ===== */
+let sheetCtx = null;     // what the open sheet is for
+let objUrl = null;
+function sheet(html) {
+  if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
+  overlay.innerHTML = `<div class="sheet-bg" data-a="close-bg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><button type="button" class="close" data-a="close">✕ סגירה</button>${html}</div></div>`;
+  const f = overlay.querySelector(".close"); if (f) f.focus();
+}
+async function openEx(id, confirmDel) {
+  const e = EX[id]; if (!e) return;
+  sheetCtx = { kind: "ex", id };
+  const lv = ["", "קל", "בינוני", "מתקדם"][e.l] || "";
+  const xs = Object.entries(e.x || {}).filter(([, v]) => v);
+  const hasV = videoIds.has(id);
+  sheet(`<h3 id="sheet-title">${esc(e.n)}</h3><div class="en">${e.en ? esc(e.en) + " · " : ""}${e.t === "barre" ? "בר" : "מזרון"} · ${esc(e.a)}${lv ? " · " + lv : ""}${e.own ? " · תרגיל שלך" : ""}</div>
+    <div class="video" id="vid-box">${hasV ? "טוען סרטון..." : "עוד אין סרטון לתרגיל הזה"}
+      <div class="row" style="justify-content:center">
+        <label class="btn ghost file-btn">${hasV ? "החלפת סרטון" : "הוספת סרטון"}<input type="file" accept="video/*" id="vid-in" aria-label="בחירת סרטון"></label>
+        ${hasV ? `<button type="button" class="btn danger" data-a="vid-del">מחיקת הסרטון</button>` : ""}
+      </div><span class="note-local">${VSYNC.status(id)}</span></div>
+    ${e.c ? `<h4>איך עושים</h4><p>${esc(e.c)}</p>` : ""}
+    ${e.g && e.g.length ? `<h4>ציוד</h4><p>${esc(e.g.join(", "))}</p>` : ""}
+    ${e.v && e.v.length ? `<h4>גרסאות</h4><ul>${e.v.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
+    ${xs.length ? `<h4>התאמות למקרים מיוחדים</h4><ul>${xs.map(([k, v]) => `<li><b>${POP[k]}:</b> ${esc(v)}</li>`).join("")}</ul>` : `<h4>התאמות</h4><p>אין הגבלה מיוחדת. בכל מקרה לפי שיקול דעתך.</p>`}
+    ${e.own ? (confirmDel ? `<div class="confirm"><b>למחוק את התרגיל?</b><span>הוא יוסר גם מהמערכים שלך. אי אפשר לבטל.</span><div class="row"><button type="button" class="btn danger" data-a="ex-del-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="ex-del-no">ביטול</button></div></div>`
+      : `<div class="row"><button type="button" class="btn ghost" data-a="ex-edit">עריכת התרגיל</button><button type="button" class="btn danger" data-a="ex-del">מחיקה</button></div>`) : ""}`);
+  if (hasV) {
+    try { const blob = await VSYNC.blob(id, () => { const b = document.getElementById("vid-box"); if (b && sheetCtx && sheetCtx.id === id) b.firstChild.textContent = "מוריד את הסרטון מהענן..."; });
+      const box = document.getElementById("vid-box");
+      if (blob && box && sheetCtx && sheetCtx.id === id) { objUrl = URL.createObjectURL(blob); const v = document.createElement("video");
+        v.src = objUrl; v.controls = true; v.playsInline = true; v.preload = "metadata"; box.firstChild.replaceWith(v); } }
+    catch (err) { const box = document.getElementById("vid-box"); if (box) box.firstChild.textContent = "לא הצלחתי לטעון את הסרטון"; }
+  }
+}
+function openExForm(id) {
+  const e = id ? EX[id] : { t: S.mode, n: "", a: AREAS[1], l: 1, g: [], c: "", v: [], x: {} };
+  sheetCtx = { kind: "exform", id: id || null, g: [...(e.g || [])] };
+  sheet(`<h3 id="sheet-title">${id ? "עריכת תרגיל" : "תרגיל חדש"}</h3>
+    <p class="note-local">יתווסף ל${(e.t || S.mode) === "barre" ? "תרגילי הבר" : "תרגילי המזרון"}.</p>
+    <div class="field"><label for="x-n">שם התרגיל</label><input class="inp" id="x-n" value="${esc(e.n)}"></div>
+    <div class="field"><label for="x-a">אזור בגוף</label><select class="inp" id="x-a">${AREAS.map(a => `<option ${a === e.a ? "selected" : ""}>${a}</option>`).join("")}</select></div>
+    <div class="field"><label for="x-l">רמה</label><select class="inp" id="x-l">${[["1","קל"],["2","בינוני"],["3","מתקדם"]].map(([v, t]) => `<option value="${v}" ${String(e.l) === v ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+    <div class="field"><label>ציוד</label><div class="chips" id="x-g">${GEAR.map(g => `<button type="button" class="chip f" data-a="gear" data-id="${g}" aria-pressed="${(e.g || []).includes(g)}">${g}</button>`).join("")}</div></div>
+    <div class="field"><label for="x-c">איך עושים (רשות)</label><textarea class="inp" id="x-c">${esc(e.c || "")}</textarea></div>
+    <div class="field"><label for="x-v">גרסאות, אחת בכל שורה (רשות)</label><textarea class="inp" id="x-v">${esc((e.v || []).join("\n"))}</textarea></div>
+    <details><summary style="cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center">התאמות למקרים מיוחדים (רשות)</summary>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">${Object.entries(POP).map(([k, v]) => `<div class="field"><label for="x-x-${k}">${v}</label><input class="inp" id="x-x-${k}" value="${esc((e.x || {})[k] || "")}" placeholder="מה עושים במקום"></div>`).join("")}</div></details>
+    <button type="button" class="btn wide" data-a="ex-save">שמירה</button>`);
+}
+function saveExForm() {
+  const n = document.getElementById("x-n").value.trim();
+  if (!n) { toast("צריך לכתוב שם לתרגיל"); document.getElementById("x-n").focus(); return; }
+  const id = sheetCtx.id || uid("u-e-");
+  const prev = EX[id] || {};
+  const x = {}; Object.keys(POP).forEach(k => { const v = document.getElementById("x-x-" + k).value.trim(); if (v) x[k] = v; });
+  const ex = { id, own: true, t: prev.t || S.mode, n, en: "", a: document.getElementById("x-a").value, l: Number(document.getElementById("x-l").value),
+    g: sheetCtx.g, c: document.getElementById("x-c").value.trim(), v: document.getElementById("x-v").value.split("\n").map(s => s.trim()).filter(Boolean), x };
+  DB.ex[id] = ex; EX[id] = ex; save();
+  toast(sheetCtx.id ? "התרגיל עודכן" : "התרגיל נוסף");
+  const back = sheetCtx.after; render();
+  if (back) { addToPlan(back.si, id); closeOverlay(); } else openEx(id);
+}
+function openPicker(si, swapIi) {
+  const p = findPlan(S.edit); if (!p) return;
+  sheetCtx = { kind: "pick", si, swapIi, q: "" };
+  drawPicker();
+}
+function drawPicker() {
+  const p = findPlan(S.edit); const { si, swapIi, q } = sheetCtx;
+  const inPlan = new Set(p.s.flatMap(s => s[2].map(it => it[0])));
+  let list = Object.values(EX).filter(e => e.t === p.t && !inPlan.has(e.id));
+  let title = "הוספת תרגיל";
+  if (swapIi != null) {
+    const cur = EX[p.s[si][2][swapIi][0]];
+    title = cur ? `במקום "${cur.n}"` : "החלפה";
+    if (cur && !q) list = list.filter(e => e.a === cur.a);
+  }
+  if (q) list = list.filter(e => e.n.includes(q) || (e.en || "").toLowerCase().includes(q.toLowerCase()));
+  // exercises that need adaptation for today's group go last; never taught ones are not tracked per exercise, so keep library order otherwise
+  list.sort((a, b) => (S.today.some(k => a.x && a.x[k]) ? 1 : 0) - (S.today.some(k => b.x && b.x[k]) ? 1 : 0));
+  const html = `<h3 id="sheet-title">${esc(title)}</h3>
+    ${swapIi != null && !q ? `<p class="note-local">תרגילים מאותו אזור בגוף שעוד לא נמצאים במערך.${S.today.length ? " מה שצריך התאמה להיום מופיע בסוף." : ""}</p>` : ""}
+    <input class="search" id="pick-q" type="search" placeholder="חיפוש בכל התרגילים" value="${esc(q)}" aria-label="חיפוש תרגיל">
+    <div class="pick">${list.map(e => `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${esc(e.n)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${S.today.filter(k => e.x && e.x[k]).map(k => " · צריך התאמה ל" + POP[k]).join("")}</small></button>`).join("") || `<p class="hint">לא מצאתי תרגיל מתאים.</p>`}</div>
+    <button type="button" class="btn ghost" data-a="pick-new">+ תרגיל חדש משלי</button>`;
+  const box = overlay.querySelector(".sheet");
+  if (box) { const qi = document.getElementById("pick-q"); const pos = qi ? qi.selectionStart : null; box.innerHTML = `<button type="button" class="close" data-a="close">✕ סגירה</button>` + html;
+    if (pos != null) { const n = document.getElementById("pick-q"); n.focus(); n.setSelectionRange(pos, pos); } }
+  else sheet(html);
+}
+function addToPlan(si, id) {
+  const p = findPlan(S.edit); if (!p) return;
+  p.s[si][2].push([id, ""]); save(); render();
+}
+function openBackup(restoreMode) {
+  sheetCtx = { kind: "backup" };
+  const nP = DB.plans.length, nE = Object.keys(DB.ex).length;
+  const b = store.get("shai_bk", {});
+  const last = b.at && !b.dirty ? `הגיבוי האחרון: ${daysAgo(new Date(b.at).toISOString().slice(0, 10))}.` : b.dirty ? "יש שינויים שעוד לא גובו." : "";
+  sheet(`<h3 id="sheet-title">גיבוי</h3>
+    ${last ? `<p><b>${last}</b></p>` : ""}
+    ${window.CLOUD ? `<p>כל מה ששמרת (${nP} מערכים, ${nE} תרגילים משלך וסימוני "העברתי היום") <b>נשמר בענן</b>, ואפשר להיכנס מכל טלפון. גם הסרטונים נשמרים בענן.</p>
+    <p class="note-local">מחוברת בתור <span dir="ltr">${esc(CLOUD.email)}</span> · <button type="button" class="linkish" data-a="sign-out">יציאה</button></p>
+    ${vidMeter()}
+    <p class="note-local">גיבוי נוסף לקובץ הוא לא חובה, אבל אפשר:</p>`
+    : `<p>כל מה ששמרת (${nP} מערכים, ${nE} תרגילים משלך וסימוני "העברתי היום") נשמר <b>רק בטלפון הזה</b>. אם מוחקים את נתוני הדפדפן או מחליפים טלפון, זה נמחק.</p>
+    <p class="note-local">כדאי לשמור גיבוי מדי פעם, למשל לשלוח אותו לעצמך בוואטסאפ. הסרטונים לא נכללים בגיבוי.</p>`}
+    <div class="row"><button type="button" class="btn" data-a="bk-copy">העתקת הגיבוי</button><a class="btn ghost" id="bk-file" download="shai-studio-backup.json" href="#">שמירה כקובץ</a></div>
+    <textarea class="inp" id="bk-text" readonly aria-label="טקסט הגיבוי" style="min-height:90px;font-size:12px" dir="ltr"></textarea>
+    <h4>שחזור מגיבוי</h4>
+    <p class="note-local">מדביקים כאן טקסט של גיבוי או בוחרים קובץ. השחזור מחליף את מה שיש עכשיו.</p>
+    <textarea class="inp" id="bk-in" aria-label="הדבקת גיבוי" dir="ltr" style="font-size:12px"></textarea>
+    <div class="row"><label class="btn ghost file-btn">בחירת קובץ<input type="file" accept=".json,application/json,text/plain" id="bk-filein" aria-label="בחירת קובץ גיבוי"></label>
+      <button type="button" class="btn danger" data-a="bk-restore">שחזור</button></div>`);
+  const json = JSON.stringify({ app: "shai-studio", saved: new Date().toISOString(), data: DB });
+  document.getElementById("bk-text").value = json;
+  const fileLink = document.getElementById("bk-file");
+  if (ON_OWN_SITE) { fileLink.href = "data:application/json;charset=utf-8," + encodeURIComponent(json); fileLink.addEventListener("click", () => { markBackedUp(); setTimeout(render, 0); }); }
+  else fileLink.remove();   // inside Claude's viewer, file saves are blocked
+}
+function restoreFrom(text) {
+  let o; try { o = JSON.parse(text); } catch (e) { toast("זה לא נראה כמו גיבוי. צריך להדביק את כל הטקסט."); return; }
+  const d = o && o.app === "shai-studio" ? o.data : null;
+  if (!d || !Array.isArray(d.plans) || typeof d.ex !== "object") { toast("זה לא נראה כמו גיבוי של הסטודיו."); return; }
+  Object.keys(DB.ex).forEach(k => { if (!BUILTIN_EX.has(k)) delete EX[k]; });
+  DB.plans = d.plans; DB.ex = d.ex || {}; DB.log = d.log || {};
+  Object.values(DB.ex).forEach(e => { e.own = true; EX[e.id] = e; });
+  DB.plans.forEach(p => p.own = true);
+  save(); markBackedUp(); closeOverlay(); S.plan = null; S.edit = null; render();
+  toast(`שוחזרו ${DB.plans.length} מערכים ו־${Object.keys(DB.ex).length} תרגילים`);
+}
+
+let wakeLock = null;
+async function openClass() {
+  const p = findPlan(S.plan); if (!p) return;
+  sheetCtx = { kind: "class" };
+  const sp = safeUrl(p.sp || "");
+  overlay.innerHTML = `<div class="class-mode" role="dialog" aria-modal="true" aria-label="מצב שיעור">
+    <div class="cm-top"><button type="button" class="btn ghost" data-a="close">✕ יציאה</button>${sp ? `<a class="btn ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}<span class="wl" id="wl"></span></div>
+    <h2 style="margin:0">${esc(p.n)}</h2>
+    ${p.s.map(([name, m, items]) => `<div class="cm-sec">${esc(name)} · ${esc(m)} דק׳</div>${items.map(([id, d]) => { const e = EX[id]; return e ? `<div class="cm-it">${esc(e.n)}<small>${esc(d || "")}</small>${alertsFor(e)}</div>` : ""; }).join("")}`).join("")}
+  </div>`;
+  overlay.querySelector(".btn").focus();
+  const wl = document.getElementById("wl");
+  try { wakeLock = await navigator.wakeLock.request("screen"); wl.textContent = "המסך יישאר דלוק"; } catch (e) { wl.textContent = ""; }
+}
+function closeOverlay() {
+  overlay.innerHTML = ""; sheetCtx = null;
+  if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
+  if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+}
+
+/* ===== Events ===== */
+document.addEventListener("click", async e => {
+  const m = e.target.closest("[data-mode]");
+  if (m) { S.mode = m.dataset.mode; S.plan = null; S.edit = null; S.area = ""; store.set("shai_mode", S.mode); render(); return; }
+  const t = e.target.closest("[data-tab]");
+  if (t) { S.tab = t.dataset.tab; S.plan = null; S.edit = null; render(); window.scrollTo(0, 0); return; }
+  const a = e.target.closest("[data-a]"); if (!a) return;
+  const id = a.dataset.id, si = Number(a.dataset.si), ii = Number(a.dataset.ii);
+  const p = findPlan(S.edit || S.plan);
+  switch (a.dataset.a) {
+    case "today": S.today = S.today.includes(id) ? S.today.filter(x => x !== id) : [...S.today, id]; store.set("shai_today", S.today); render(); break;
+    case "sort": S.sort = id; store.set("shai_sort", id); render(); break;
+    case "src": S.src = id; store.set("shai_src", id); render(); break;
+    case "plan": S.plan = id; S.confirm = null; render(); window.scrollTo(0, 0); break;
+    case "back": S.plan = null; render(); break;
+    case "area": S.area = id; render(); break;
+    case "ex": openEx(id); break;
+    case "class": openClass(); break;
+    case "close": closeOverlay(); break;
+    case "close-bg": if (e.target === a) closeOverlay(); break;
+    case "share": if (p) sharePlan(p); break;
+    case "print": if (p) printPlan(p); break;
+    case "taught": {
+      const l = DB.log[p.id] = DB.log[p.id] || [];
+      if (l[l.length - 1] === todayISO()) { l.pop(); toast("הסימון בוטל"); } else { l.push(todayISO()); toast("נרשם שהעברת את המערך היום"); }
+      save(); render(); break; }
+    case "dup": { const n = newPlan(p); S.plan = n.id; S.edit = n.id; render(); window.scrollTo(0, 0); toast("נוצר עותק שלך. אפשר לערוך."); break; }
+    case "new-plan": { const n = newPlan(null); S.plan = n.id; S.edit = n.id; render(); window.scrollTo(0, 0); break; }
+    case "edit": S.edit = S.plan; S.confirm = null; render(); window.scrollTo(0, 0); break;
+    case "end-edit": S.edit = null; S.confirm = null; render(); window.scrollTo(0, 0); break;
+    case "up": case "down": { const arr = p.s[si][2]; const j = a.dataset.a === "up" ? ii - 1 : ii + 1; [arr[ii], arr[j]] = [arr[j], arr[ii]]; save(); render(); break; }
+    case "item-del": p.s[si][2].splice(ii, 1); save(); render(); break;
+    case "sec-del": p.s.splice(si, 1); save(); render(); break;
+    case "add-sec": p.s.push(["חלק חדש", 5, []]); save(); render(); break;
+    case "add-item": openPicker(si, null); break;
+    case "swap": openPicker(si, ii); break;
+    case "pick": {
+      const { si: s2, swapIi } = sheetCtx;
+      if (swapIi != null) { p.s[s2][2][swapIi][0] = id; toast("הוחלף"); } else { p.s[s2][2].push([id, ""]); toast("נוסף למערך"); }
+      save(); closeOverlay(); render(); break; }
+    case "pick-new": { const after = { si: sheetCtx.si }; openExForm(null); sheetCtx.after = after; break; }
+    case "del-plan": S.confirm = "del-plan"; render(); break;
+    case "cancel": S.confirm = null; render(); break;
+    case "del-plan-yes": DB.plans = DB.plans.filter(x => x.id !== p.id); delete DB.log[p.id]; save(); S.edit = null; S.plan = null; S.confirm = null; render(); toast("המערך נמחק"); break;
+    case "new-ex": openExForm(null); break;
+    case "ex-edit": openExForm(sheetCtx.id); break;
+    case "gear": { const g = sheetCtx.g; const k = g.indexOf(id); k >= 0 ? g.splice(k, 1) : g.push(id); a.setAttribute("aria-pressed", k < 0); break; }
+    case "ex-save": saveExForm(); break;
+    case "ex-del": openEx(sheetCtx.id, true); break;
+    case "ex-del-no": openEx(sheetCtx.id); break;
+    case "ex-del-yes": {
+      const xid = sheetCtx.id; delete DB.ex[xid]; delete EX[xid];
+      DB.plans.forEach(pl => pl.s.forEach(s => { s[2] = s[2].filter(it => it[0] !== xid); }));
+      try { await VSYNC.remove(xid); } catch (err) {}
+      save(); closeOverlay(); render(); toast("התרגיל נמחק"); break; }
+    case "vid-del": { const xid = sheetCtx.id; try { await VSYNC.remove(xid); toast("הסרטון נמחק"); } catch (err) { toast("לא הצלחתי למחוק"); } openEx(xid); render(); break; }
+    case "backup": openBackup(); break;
+    case "privacy": openPrivacy(false); break;
+    case "privacy-ok": store.set("shai_privacy_ok", 1); closeOverlay(); break;
+    case "idea": openIdea(); break;
+    case "idea-send": {
+      const t = document.getElementById("idea-text"), body = t.value.trim();
+      if (!body) { toast("קודם כותבים משהו"); t.focus(); break; }
+      a.disabled = true; a.textContent = "שולחת...";
+      let ok = false;
+      try { const r = await CLOUD.sb.from("suggestions").insert({ body }); ok = !r.error; } catch (err) {}
+      if (ok) { closeOverlay(); toast("תודה! ההצעה נשלחה"); }
+      else { a.disabled = false; a.textContent = "שליחה"; toast("לא נשלח. אולי אין אינטרנט. נסי שוב בעוד רגע."); }
+      break; }
+    case "bk-copy": {
+      const tx = document.getElementById("bk-text");
+      const sel = () => { tx.focus(); tx.select(); markBackedUp(); render(); toast("סימנתי את הטקסט. לוחצים לחיצה ארוכה ו״העתק״."); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tx.value).then(() => { markBackedUp(); render(); toast("הגיבוי הועתק. אפשר להדביק בוואטסאפ לעצמך."); }, sel); else sel();
+      break; }
+    case "sign-out": if (window.CLOUD) CLOUD.signOut(); break;
+    case "bk-later": store.set("shai_bk_snooze", Date.now() + 3 * 864e5); render(); break;
+    case "bk-restore": {
+      const v = document.getElementById("bk-in").value.trim();
+      if (!v) { toast("קודם מדביקים גיבוי או בוחרים קובץ"); break; }
+      if (sheetCtx.armed !== v) { sheetCtx.armed = v; a.textContent = "בטוח? זה יחליף את מה שיש. ללחוץ שוב"; break; }
+      restoreFrom(v); break; }
+  }
+});
+
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.id === "lib-q") { S.q = el.value; const pos = el.selectionStart; render(); const i = document.getElementById("lib-q"); i.focus(); i.setSelectionRange(pos, pos); return; }
+  if (el.id === "pick-q" && sheetCtx && sheetCtx.kind === "pick") { sheetCtx.q = el.value.trim(); drawPicker(); return; }
+  const f = el.dataset && el.dataset.f; if (!f) return;
+  const p = findPlan(S.edit); if (!p) return;
+  const si = Number(el.dataset.si), ii = Number(el.dataset.ii);
+  if (f === "n") p.n = el.value; else if (f === "d") p.d = el.value; else if (f === "sp") p.sp = el.value.trim();
+  else if (f === "sec-name") p.s[si][0] = el.value; else if (f === "sec-min") p.s[si][1] = el.value.replace(/[^\d]/g, "");
+  else if (f === "dose") p.s[si][2][ii][1] = el.value;
+  clearTimeout(save.t); save.t = setTimeout(save, 300);
+});
+
+document.addEventListener("change", async e => {
+  const el = e.target;
+  if (el.id === "vid-in" && el.files && el.files[0] && sheetCtx) {
+    const file = el.files[0], xid = sheetCtx.id;
+    el.value = "";
+    if (window.CLOUD && file.size > VMAX) { toast("הסרטון גדול מדי (מעל 50MB). צלמי סרטון קצר יותר, עד חצי דקה בערך."); return; }
+    if (file.size > 300 * 1024 * 1024) { toast("הסרטון גדול מדי. עדיף סרטון קצר."); return; }
+    toast(window.CLOUD ? "שומר ומעלה לענן..." : "שומר את הסרטון...");
+    try { await VID.put(xid, file); }
+    catch (err) { toast("לא הצלחתי לשמור את הסרטון. אולי אין מקום בטלפון."); return; }
+    try { await VSYNC.add(xid); } catch (err) {}
+    const m = VSYNC.meta[xid];
+    toast(!window.CLOUD ? "הסרטון נשמר" : m === "" ? "הסרטון נשמר בטלפון, ויעלה לענן כשיהיה אינטרנט" : m === "big" ? "הסרטון נשמר רק בטלפון (גדול מדי לענן)" : m === "full" ? "אין מספיק מקום בענן. הסרטון נשמר רק בטלפון." : "הסרטון עלה לענן");
+    if (sheetCtx && sheetCtx.id === xid) openEx(xid); render();
+  }
+  if (el.id === "bk-filein" && el.files && el.files[0]) {
+    try { document.getElementById("bk-in").value = await el.files[0].text(); toast("הקובץ נטען. עכשיו לוחצים שחזור."); } catch (err) { toast("לא הצלחתי לקרוא את הקובץ"); }
+  }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && overlay.innerHTML) closeOverlay(); });
+document.addEventListener("visibilitychange", async () => {
+  if (wakeLock !== null && document.visibilityState === "visible" && document.querySelector(".class-mode")) {
+    try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+});
+if ("serviceWorker" in navigator && ON_OWN_SITE) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+render();
+if (window.CLOUD && !store.get("shai_privacy_ok", 0)) openPrivacy(true);
+</script>
