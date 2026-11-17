@@ -108,6 +108,7 @@ h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin
 .item .ds { color: var(--muted); font-size: 14px; text-align: end; min-width: 0 }
 .alert { font-size: 14px; background: var(--warn-soft); border-inline-start: 3px solid var(--warn); padding: 6px 10px; border-radius: 6px; color: var(--fg) }
 .alert b { color: var(--warn) }
+.alert.no { border-inline-start-width: 5px; font-weight: 600 }
 .confirm { background: var(--warn-soft); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px }
 
 /* edit mode */
@@ -151,6 +152,19 @@ textarea.inp { min-height: 80px; resize: vertical }
 .sec-edit .sec-row { display: grid; grid-template-columns: 1fr 84px auto; gap: 8px; align-items: center }
 .ed-item { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 6px }
 .ed-item .nm { font-weight: 700; background: none; border: 0; padding: 0; text-align: start; cursor: pointer; color: var(--fg) }
+.ed-row { display: flex; align-items: center; gap: 8px }
+.ed-row .nm { flex: 1; min-height: 44px }
+.ed-row .ds { color: var(--muted); font-size: 14px }
+.ed-sec { margin: -12px -12px 0; border-radius: 14px 14px 0 0 }
+.wiz-step { margin: 0; color: var(--tone); font-weight: 700; font-size: 14px }
+.more-set { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px }
+.more-set summary { cursor: pointer; padding: 14px 0; font-weight: 700; min-height: 44px }
+.more-body { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px }
+.more-body .sec-row { display: grid; grid-template-columns: 1fr 84px auto; gap: 8px; align-items: center }
+.item-menu { display: flex; flex-direction: column; gap: 8px }
+.item-menu .btn { justify-content: flex-start }
+.item-menu .btn.wide { justify-content: center; margin-top: 4px }
+.add-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--muted); font-size: 14px }
 .ed-item .ctl { display: grid; grid-template-columns: 1fr repeat(4, 44px); gap: 6px; align-items: center }
 .icon-btn { min-height: 44px; min-width: 44px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; cursor: pointer; font-size: 16px }
 .icon-btn:disabled { opacity: .35; cursor: default }
@@ -194,6 +208,12 @@ details.tips ul { margin: 0; padding-inline-start: 20px }
 .pick { display: flex; flex-direction: column; gap: 6px }
 .pick button { text-align: start; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column }
 .pick button small { color: var(--muted) }
+.pick-note { font-size: 13px; color: var(--ink, inherit); margin-top: 2px }
+.pick-ok { font-size: 13px; color: var(--mat); margin-top: 2px }
+.pick-pop { margin: 4px 0 10px }
+.pick-lbl { display: block; font-weight: 600; margin-bottom: 6px }
+.pick-more { margin-top: 10px }
+.pick-more summary { cursor: pointer; padding: 8px 0; color: var(--muted) }
 .file-btn { position: relative; overflow: hidden }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer }
 .note-local { font-size: 13px; color: var(--muted) }
@@ -534,15 +554,28 @@ function daysAgo(iso) { const d = Math.round((new Date(todayISO()) - new Date(is
 function lastTaught(id) { const l = DB.log[id]; return l && l.length ? l[l.length - 1] : null; }
 
 /* ===== Small pieces ===== */
-function alertsFor(ex) { return S.today.filter(p => ex.x && ex.x[p]).map(p => `<div class="alert"><b>${POP[p]}:</b> ${esc(ex.x[p])}</div>`).join(""); }
+// which special cases to show for a plan: the one saved on the plan, else what's marked "יש היום בשיעור"
+const planPops = p => p && p.pop && POP[p.pop] ? [p.pop] : S.today;
+// "not suitable" = the note says so, or says to replace the exercise ("להחליף:")
+const notFor = (e, k) => { const v = k && e.x && e.x[k] || ""; return /^\s*לא מתאים/.test(v) || /להחליף:/.test(v); };
+function alertsFor(ex, pops) { return (pops || S.today).filter(p => ex.x && ex.x[p]).map(p => notFor(ex, p)
+  ? `<div class="alert no"><b>🚫 לא מתאים ל${POP[p]}.</b> ${esc(ex.x[p].replace(/^\s*לא מתאים\s*/, ""))}</div>`
+  : `<div class="alert"><b>${POP[p]}:</b> ${esc(ex.x[p])}</div>`).join(""); }
+function planPopBox(p, editing) {
+  const n = p.pop ? p.s.reduce((a, s) => a + s[2].filter(([id]) => EX[id] && notFor(EX[id], p.pop)).length, 0) : 0;
+  return `<div class="today plan-pop"><b>המערך הזה מיועד ל:</b>
+    <div class="chips"><button type="button" class="chip" data-a="plan-pop" data-id="" aria-pressed="${!p.pop}">כולן (בלי מצב מיוחד)</button>
+    ${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="plan-pop" data-id="${k}" aria-pressed="${p.pop === k}">${v}</button>`).join("")}</div>
+    <span class="hint">${!p.pop ? "בוחרים מצב, ובכל תרגיל תופיע רק ההתאמה שלו." : n ? `${n} תרגילים במערך לא מתאימים ל${POP[p.pop]}. ${editing ? "לוחצים ⇄ ליד התרגיל כדי להחליף." : 'לוחצים "עריכה" ואז ⇄ כדי להחליף.'}` : `✓ כל התרגילים במערך מתאימים ל${POP[p.pop]} (עם ההתאמות שכתובות).`}</span></div>`;
+}
 function todayBox() {
   return `<div class="today"><b>יש היום בשיעור:</b>
     <div class="chips">${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="today" data-id="${k}" aria-pressed="${S.today.includes(k)}">${v}</button>`).join("")}</div>
     <span class="hint">בוחרים, ובכל תרגיל שצריך התאמה תופיע הערה עם החלופה.</span></div>`;
 }
 function planWarnCount(p) {
-  if (!S.today.length) return 0;
-  let n = 0; p.s.forEach(sec => sec[2].forEach(([id]) => { const ex = EX[id]; if (ex && S.today.some(k => ex.x && ex.x[k])) n++; }));
+  const pops = planPops(p); if (!pops.length) return 0;
+  let n = 0; p.s.forEach(sec => sec[2].forEach(([id]) => { const ex = EX[id]; if (ex && pops.some(k => ex.x && ex.x[k])) n++; }));
   return n;
 }
 const planMins = p => p.s.reduce((a, s) => a + (Number(s[1]) || 0), 0);
@@ -550,11 +583,11 @@ function planCard(p) {
   const w = planWarnCount(p); const last = lastTaught(p.id);
   return `<button type="button" class="plan-card ${isMine(p) ? "mine" : ""}" data-a="plan" data-id="${esc(p.id)}"><span class="t">${esc(p.n)}</span>${p.d ? `<span class="d">${esc(p.d)}</span>` : ""}
     <span class="meta"><span class="tag">${planMins(p)} דק׳</span>${(p.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
-    <span class="tag last">${last ? "הועבר " + daysAgo(last) : "עוד לא הועבר"}</span>${w ? `<span class="tag w">${w} תרגילים צריכים התאמה</span>` : ""}</span></button>`;
+    <span class="tag last">${last ? "הועבר " + daysAgo(last) : "עוד לא הועבר"}</span>${p.pop && POP[p.pop] ? `<span class="tag">ל${esc(POP[p.pop])}</span>` : ""}${w ? `<span class="tag w">${w} תרגילים צריכים התאמה</span>` : ""}</span></button>`;
 }
-function itemRow(id, dose) {
+function itemRow(id, dose, pops) {
   const ex = EX[id]; if (!ex) return `<div class="item"><span class="nm">תרגיל שנמחק</span></div>`;
-  return `<button type="button" class="item" data-a="ex" data-id="${esc(id)}"><span class="top"><span class="nm">${esc(ex.n)}${videoIds.has(id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(dose || "")}</span></span>${alertsFor(ex)}</button>`;
+  return `<button type="button" class="item" data-a="ex" data-id="${esc(id)}"><span class="top"><span class="nm">${esc(ex.n)}${videoIds.has(id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(dose || "")}</span></span>${alertsFor(ex, pops)}</button>`;
 }
 
 /* ===== Plans ===== */
@@ -563,6 +596,8 @@ function sortPlans(list) {
   return [...list].sort((a, b) => (lastTaught(a.id) || "0000") .localeCompare(lastTaught(b.id) || "0000"));
 }
 function viewPlans() {
+  if (S.wiz && S.wiz.step === 1) return viewWiz1();
+  if (S.wiz && S.wiz.step === 3) return viewWiz3(findPlan(S.wiz.id));
   if (S.edit) return viewEdit(findPlan(S.edit));
   if (S.plan) return viewPlan(findPlan(S.plan));
   const mine = sortPlans(DB.plans.filter(p => p.t === S.mode));
@@ -597,8 +632,8 @@ function viewPlan(p) {
     ${sp ? `<a class="btn ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}
   </div>
   <div class="row share-row"><button type="button" class="btn ghost" data-a="share">📤 שיתוף</button><button type="button" class="btn ghost" data-a="print">🖨️ הדפסה</button></div></div>
-  ${todayBox()}
-  ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d)).join("") || `<div class="item"><span class="hint">אין עדיין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
+  ${isMine(p) ? planPopBox(p, false) : ""}${p.pop ? "" : todayBox()}
+  ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d, planPops(p))).join("") || `<div class="item"><span class="hint">אין עדיין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
   <p class="lead">לוחצים על תרגיל כדי לראות הסבר, גרסאות, התאמות וסרטון.</p></div>`;
 }
 
@@ -634,30 +669,57 @@ function printPlan(p) {
 function viewEdit(p) {
   if (!p || !isMine(p)) { S.edit = null; return viewPlans(); }
   const c = S.confirm === "del-plan";
-  return `<div class="plan-view"><button type="button" class="back" data-a="end-edit">→ סיום עריכה</button>
-  <h2 style="margin:0">עריכת מערך</h2>
-  <p class="note-local">כל שינוי נשמר מיד, במכשיר הזה.</p>
-  <div class="field"><label for="f-name">שם המערך</label><input class="inp" id="f-name" data-f="n" value="${esc(p.n)}"></div>
-  <div class="field"><label for="f-desc">כמה מילים על המערך</label><input class="inp" id="f-desc" data-f="d" value="${esc(p.d || "")}" placeholder="למשל: ישבן בפוקוס, עם גומייה"></div>
-  <div class="field"><label for="f-sp">קישור לפלייליסט בספוטיפיי</label><input class="inp" id="f-sp" data-f="sp" value="${esc(p.sp || "")}" placeholder="https://open.spotify.com/..." inputmode="url" dir="ltr"></div>
-  ${p.s.map((sec, si) => `<div class="sec-edit">
-    <div class="sec-row"><input class="inp" id="f-sec-${si}" data-f="sec-name" data-si="${si}" value="${esc(sec[0])}" aria-label="שם החלק">
-      <input class="inp" id="f-min-${si}" data-f="sec-min" data-si="${si}" value="${esc(sec[1])}" inputmode="numeric" aria-label="דקות">
-      <button type="button" class="icon-btn" data-a="sec-del" data-si="${si}" aria-label="מחיקת החלק">✕</button></div>
+  const wiz = S.wiz && S.wiz.id === p.id;   // step 2 of building a new plan
+  const head = wiz
+    ? `<p class="wiz-step">שלב 2 מתוך 3: בוחרים תרגילים</p><h2 style="margin:0">${esc(p.n)}</h2>
+       <p class="note-local">לוחצים "+ תרגיל" בכל חלק. אפשר לבחור כמה תרגילים ברצף.</p>`
+    : `<button type="button" class="back" data-a="end-edit">→ חזרה למערך</button>
+       <h2 style="margin:0">עריכת מערך</h2>
+       <div class="field"><label for="f-name">שם המערך</label><input class="inp" id="f-name" data-f="n" value="${esc(p.n)}"></div>
+       ${planPopBox(p, true)}`;
+  const secs = p.s.map((sec, si) => `<div class="sec-edit">
+    <div class="sec-h ed-sec">${esc(sec[0] || "חלק")}<span>${esc(sec[1] || 0)} דק׳</span></div>
     ${sec[2].map(([id, d], ii) => { const ex = EX[id];
-      return `<div class="ed-item"><button type="button" class="nm" data-a="ex" data-id="${esc(id)}">${ex ? esc(ex.n) : "תרגיל שנמחק"}</button>${ex ? alertsFor(ex) : ""}
-      <div class="ctl"><input class="inp" id="f-dose-${si}-${ii}" data-f="dose" data-si="${si}" data-ii="${ii}" value="${esc(d || "")}" placeholder="חזרות / זמן" aria-label="חזרות או זמן">
-        <button type="button" class="icon-btn" data-a="up" data-si="${si}" data-ii="${ii}" aria-label="למעלה" ${ii === 0 ? "disabled" : ""}>↑</button>
-        <button type="button" class="icon-btn" data-a="down" data-si="${si}" data-ii="${ii}" aria-label="למטה" ${ii === sec[2].length - 1 ? "disabled" : ""}>↓</button>
-        <button type="button" class="icon-btn" data-a="swap" data-si="${si}" data-ii="${ii}" aria-label="החלפה בתרגיל אחר">⇄</button>
-        <button type="button" class="icon-btn" data-a="item-del" data-si="${si}" data-ii="${ii}" aria-label="הסרה">✕</button></div></div>`; }).join("")}
+      return `<div class="ed-item"><div class="ed-row"><button type="button" class="nm" data-a="ex" data-id="${esc(id)}">${ex ? esc(ex.n) : "תרגיל שנמחק"}</button>${d ? `<span class="ds">${esc(d)}</span>` : ""}
+        <button type="button" class="icon-btn" data-a="item-menu" data-si="${si}" data-ii="${ii}" aria-label="פעולות על ${ex ? esc(ex.n) : "התרגיל"}">⋯</button></div>
+        ${ex ? alertsFor(ex, planPops(p)) : ""}</div>`; }).join("")}
     <button type="button" class="btn ghost" data-a="add-item" data-si="${si}">+ תרגיל</button>
-  </div>`).join("")}
-  <button type="button" class="btn ghost wide" data-a="add-sec">+ חלק חדש בשיעור</button>
-  ${todayBox()}
-  ${c ? `<div class="confirm"><b>למחוק את המערך "${esc(p.n)}"?</b><span>אי אפשר לבטל את זה.</span><div class="row"><button type="button" class="btn danger" data-a="del-plan-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="cancel">ביטול</button></div></div>`
+  </div>`).join("");
+  const more = wiz ? "" : `<details class="more-set" data-keep="more" ${S.moreOpen || c ? "open" : ""}><summary>עוד הגדרות</summary><div class="more-body">
+    <div class="field"><label for="f-desc">כמה מילים על המערך</label><input class="inp" id="f-desc" data-f="d" value="${esc(p.d || "")}" placeholder="למשל: ישבן בפוקוס, עם גומייה"></div>
+    <div class="field"><label for="f-sp">קישור לפלייליסט בספוטיפיי</label><input class="inp" id="f-sp" data-f="sp" value="${esc(p.sp || "")}" placeholder="https://open.spotify.com/..." inputmode="url" dir="ltr"></div>
+    <div class="field"><b>חלקי השיעור ודקות</b>
+    ${p.s.map((sec, si) => `<div class="sec-row"><input class="inp" id="f-sec-${si}" data-f="sec-name" data-si="${si}" value="${esc(sec[0])}" aria-label="שם החלק">
+      <input class="inp" id="f-min-${si}" data-f="sec-min" data-si="${si}" value="${esc(sec[1])}" inputmode="numeric" aria-label="דקות">
+      <button type="button" class="icon-btn" data-a="sec-del" data-si="${si}" aria-label="מחיקת החלק ${esc(sec[0])}">✕</button></div>`).join("")}
+    <button type="button" class="btn ghost" data-a="add-sec">+ חלק חדש בשיעור</button></div>
+    ${c ? `<div class="confirm"><b>למחוק את המערך "${esc(p.n)}"?</b><span>אי אפשר לבטל את זה.</span><div class="row"><button type="button" class="btn danger" data-a="del-plan-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="cancel">ביטול</button></div></div>`
       : `<button type="button" class="btn danger" data-a="del-plan">מחיקת המערך</button>`}
-  </div>`;
+  </div></details>`;
+  const foot = wiz ? `<button type="button" class="btn wide" data-a="wiz-next">הבא ←</button>`
+    : `<button type="button" class="btn wide" data-a="end-edit">✓ שמירה וסיום</button>`;
+  return `<div class="plan-view">${head}${secs}${more}${foot}</div>`;
+}
+/* ===== Building a new plan, step by step ===== */
+function viewWiz1() {
+  const w = S.wiz;
+  return `<div class="plan-view"><button type="button" class="back" data-a="wiz-cancel">→ ביטול</button>
+  <p class="wiz-step">שלב 1 מתוך 3</p><h2 style="margin:0">מערך ${S.mode === "barre" ? "בר" : "מזרון"} חדש</h2>
+  <div class="field"><label for="wiz-n">איך קוראים למערך?</label><input class="inp" id="wiz-n" value="${esc(w.n)}" placeholder="למשל: ישבן ובטן"></div>
+  <div class="today plan-pop"><b>למי הוא מיועד?</b><div class="chips">
+    <button type="button" class="chip" data-a="wiz-pop" data-id="" aria-pressed="${!w.pop}">כולן (בלי מצב מיוחד)</button>
+    ${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="wiz-pop" data-id="${k}" aria-pressed="${w.pop === k}">${v}</button>`).join("")}</div>
+    <span class="hint">אם בוחרים מצב, בכל תרגיל תופיע רק ההתאמה שלו. אפשר לשנות אחר כך.</span></div>
+  <button type="button" class="btn wide" data-a="wiz-next">הבא ←</button></div>`;
+}
+function viewWiz3(p) {
+  if (!p) { S.wiz = null; return viewPlans(); }
+  const n = p.s.reduce((a, s) => a + s[2].length, 0);
+  return `<div class="plan-view"><p class="wiz-step">שלב 3 מתוך 3: בודקים ושומרים</p>
+  <div class="plan-head"><h2>${esc(p.n)}</h2><p class="lead">${n} תרגילים · ${planMins(p)} דקות${p.pop && POP[p.pop] ? " · ל" + esc(POP[p.pop]) : ""}</p></div>
+  ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d, planPops(p))).join("") || `<div class="item"><span class="hint">אין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
+  <button type="button" class="btn wide" data-a="wiz-done">✓ שמירת המערך</button>
+  <button type="button" class="btn ghost wide" data-a="wiz-back">→ חזרה לבחירת תרגילים</button></div>`;
 }
 function newPlan(from) {
   const base = from ? JSON.parse(JSON.stringify(from)) : { t: S.mode, n: "מערך חדש", d: "", tags: [], s: [["חימום", 6, []], ["חלק מרכזי", 35, []], ["מתיחות", 6, []]] };
@@ -763,7 +825,7 @@ function verItem(v) {
 }
 function adaptItem(name, v) {
   const m = v.match(/^(.*?)\s*\.?\s*להחליף:\s*(.*)$/);
-  const head = m ? m[1] : v, rep = m ? m[2] : "";
+  const rep = m ? m[2] : "", head = m ? (m[1] || "לא מתאים") : v;   // "להחליף:" alone means not suitable
   const no = /^לא מתאים/.test(head);
   return `<li><b>${esc(name)}</b>${head ? `<span class="ad-txt">${no ? "🚫 " : ""}${esc(head)}</span>` : ""}${rep ? `<span class="ad-rep"><i>במקום זה:</i> ${esc(rep)}</span>` : ""}</li>`;
 }
@@ -782,7 +844,13 @@ async function openEx(id, confirmDel) {
     ${e.c ? `<h4>איך עושים</h4><p>${esc(e.c)}</p>` : ""}
     ${e.g && e.g.length ? `<h4>ציוד</h4><p>${esc(e.g.join(", "))}</p>` : ""}
     ${e.v && e.v.length ? `<h4>אפשר לעשות את זה גם כך</h4><p class="sub-lead">גרסאות קלות וקשות יותר של אותו תרגיל:</p><ul class="vers">${e.v.map(verItem).join("")}</ul>` : ""}
-    ${xs.length ? `<h4>אם יש מתאמנת עם מצב מיוחד</h4><p class="sub-lead">כך אפשר להתאים את התרגיל לכל מצב:</p><ul class="adapts">${xs.map(([k, v]) => adaptItem(POP[k], v)).join("")}</ul>` : `<h4>התאמות</h4><p>אין הגבלה מיוחדת. בכל מקרה לפי שיקול דעתך.</p>`}
+    ${(() => {   // inside a plan made for one special case: show only that case, the rest folded
+      const pp = findPlan(S.edit || S.plan), k = pp && pp.pop && POP[pp.pop] ? pp.pop : "";
+      const all = xs.length ? `<ul class="adapts">${xs.map(([kk, v]) => adaptItem(POP[kk], v)).join("")}</ul>` : `<p>אין הגבלה מיוחדת. בכל מקרה לפי שיקול דעתך.</p>`;
+      if (k) return `<h4>ל${esc(POP[k])} (המערך הזה)</h4>${e.x && e.x[k] ? `<ul class="adapts">${adaptItem(POP[k], e.x[k])}</ul>` : `<p>✓ אין הגבלה רשומה ל${esc(POP[k])}. בכל מקרה לפי שיקול דעתך.</p>`}
+        ${xs.length ? `<details class="pick-more"><summary>התאמות לשאר המצבים</summary>${all}</details>` : ""}`;
+      return xs.length ? `<h4>אם יש מתאמנת עם מצב מיוחד</h4><p class="sub-lead">כך אפשר להתאים את התרגיל לכל מצב:</p>${all}` : `<h4>התאמות</h4>${all}`;
+    })()}
     ${e.own ? (confirmDel ? `<div class="confirm"><b>למחוק את התרגיל?</b><span>הוא יוסר גם מהמערכים שלך. אי אפשר לבטל.</span><div class="row"><button type="button" class="btn danger" data-a="ex-del-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="ex-del-no">ביטול</button></div></div>`
       : `<div class="row"><button type="button" class="btn ghost" data-a="ex-edit">עריכת התרגיל</button><button type="button" class="btn danger" data-a="ex-del">מחיקה</button></div>`) : ""}`);
   if (hasV) {
@@ -823,26 +891,44 @@ function saveExForm() {
 }
 function openPicker(si, swapIi) {
   const p = findPlan(S.edit); if (!p) return;
-  sheetCtx = { kind: "pick", si, swapIi, q: "" };
+  // "מתאמנת עם…": in swap mode, start from the plan's special case, else the first one marked for today
+  sheetCtx = { kind: "pick", si, swapIi, q: "", pop: planPops(p)[0] || "" };
   drawPicker();
 }
 function drawPicker() {
-  const p = findPlan(S.edit); const { si, swapIi, q } = sheetCtx;
+  const p = findPlan(S.edit); const { si, swapIi, q, pop } = sheetCtx;
   const inPlan = new Set(p.s.flatMap(s => s[2].map(it => it[0])));
   let list = Object.values(EX).filter(e => e.t === p.t && !inPlan.has(e.id));
-  let title = "הוספת תרגיל";
+  let title = "הוספת תרגיל", cur = null, other = [];
+  if (pop) list = list.filter(e => !notFor(e, pop));
   if (swapIi != null) {
-    const cur = EX[p.s[si][2][swapIi][0]];
+    cur = EX[p.s[si][2][swapIi][0]];
     title = cur ? `במקום "${cur.n}"` : "החלפה";
-    if (cur && !q) list = list.filter(e => e.a === cur.a);
+    if (cur && !q) { other = list.filter(e => e.a !== cur.a); list = list.filter(e => e.a === cur.a); }
   }
   if (q) list = list.filter(e => e.n.includes(q) || (e.en || "").toLowerCase().includes(q.toLowerCase()));
   // exercises that need adaptation for today's group go last; never taught ones are not tracked per exercise, so keep library order otherwise
-  list.sort((a, b) => (S.today.some(k => a.x && a.x[k]) ? 1 : 0) - (S.today.some(k => b.x && b.x[k]) ? 1 : 0));
+  const need = e => (pop ? [pop] : S.today).some(k => e.x && e.x[k]) ? 1 : 0;
+  list.sort((a, b) => need(a) - need(b)); other.sort((a, b) => need(a) - need(b));
+  const row = e => {
+    const ks = pop ? [pop] : S.today.filter(k => e.x && e.x[k]);
+    const notes = pop ? (e.x && e.x[pop] ? `<span class="pick-note">ל${esc(POP[pop])}: ${esc(e.x[pop])}</span>` : `<span class="pick-ok">✓ בלי הגבלה ל${esc(POP[pop])}</span>`) : ks.map(k => " · צריך התאמה ל" + POP[k]).join("");
+    return `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${esc(e.n)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${pop ? "" : notes}</small>${pop ? notes : ""}</button>`;
+  };
+  const popChips = `<div class="pick-pop"><span class="pick-lbl">מתאמנת עם:</span><div class="chips">
+      <button type="button" class="chip" data-a="pick-pop" data-id="" aria-pressed="${!pop}">בלי מצב מיוחד</button>
+      ${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="pick-pop" data-id="${k}" aria-pressed="${pop === k}">${esc(v)}</button>`).join("")}</div></div>`;
+  const curNote = cur && pop ? (cur.x && cur.x[pop] ? `<div class="alert"><b>"${esc(cur.n)}" ל${esc(POP[pop])}:</b> ${esc(cur.x[pop])}</div>` : `<p class="note-local">✓ "${esc(cur.n)}" מתאים גם ל${esc(POP[pop])}, בלי הגבלה רשומה.</p>`) : "";
+  const lead = q ? "" : swapIi != null ? `<p class="note-local">${pop ? `תרגילים מאותו אזור בגוף, בלי מה שמסומן "לא מתאים" ל${esc(POP[pop])}.` : "תרגילים מאותו אזור בגוף שעוד לא נמצאים במערך."}</p>`
+    : pop ? `<p class="note-local">בלי מה שמסומן "לא מתאים" ל${esc(POP[pop])}.</p>` : "";
+  const empty = swapIi != null && pop && !q ? `<p class="hint">אין תרגיל מתאים מאותו אזור ל${esc(POP[pop])}. אפשר להוסיף תרגיל משלך למטה.</p>` : `<p class="hint">לא מצאתי תרגיל מתאים.</p>`;
+  if (swapIi == null) title = `הוספה ל"${p.s[si][0] || "חלק"}"`;
+  const addBar = swapIi == null ? `<div class="add-bar"><span>${sheetCtx.added ? `נוספו ${sheetCtx.added} ✓` : "אפשר לבחור כמה תרגילים ברצף."}</span><button type="button" class="btn" data-a="close-render">סיום</button></div>` : "";
   const html = `<h3 id="sheet-title">${esc(title)}</h3>
-    ${swapIi != null && !q ? `<p class="note-local">תרגילים מאותו אזור בגוף שעוד לא נמצאים במערך.${S.today.length ? " מה שצריך התאמה להיום מופיע בסוף." : ""}</p>` : ""}
+    ${addBar}${popChips}${curNote}${lead}
     <input class="search" id="pick-q" type="search" placeholder="חיפוש בכל התרגילים" value="${esc(q)}" aria-label="חיפוש תרגיל">
-    <div class="pick">${list.map(e => `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${esc(e.n)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${S.today.filter(k => e.x && e.x[k]).map(k => " · צריך התאמה ל" + POP[k]).join("")}</small></button>`).join("") || `<p class="hint">לא מצאתי תרגיל מתאים.</p>`}</div>
+    <div class="pick">${list.map(row).join("") || empty}</div>
+    ${other.length && pop ? `<details class="pick-more"><summary>עוד ${other.length} תרגילים מאזורים אחרים</summary><div class="pick">${other.map(row).join("")}</div></details>` : ""}
     <button type="button" class="btn ghost" data-a="pick-new">+ תרגיל חדש משלי</button>`;
   const box = overlay.querySelector(".sheet");
   if (box) { const qi = document.getElementById("pick-q"); const pos = qi ? qi.selectionStart : null; box.innerHTML = `<button type="button" class="close" data-a="close">✕ סגירה</button>` + html;
@@ -916,14 +1002,15 @@ function closeOverlay() {
 /* ===== Events ===== */
 document.addEventListener("click", async e => {
   const m = e.target.closest("[data-mode]");
-  if (m) { S.mode = m.dataset.mode; S.plan = null; S.edit = null; S.area = ""; store.set("shai_mode", S.mode); render(); return; }
+  if (m) { S.mode = m.dataset.mode; S.plan = null; S.edit = null; S.wiz = null; S.area = ""; store.set("shai_mode", S.mode); render(); return; }
   const t = e.target.closest("[data-tab]");
-  if (t) { S.tab = t.dataset.tab; S.plan = null; S.edit = null; render(); window.scrollTo(0, 0); return; }
+  if (t) { S.tab = t.dataset.tab; S.plan = null; S.edit = null; S.wiz = null; render(); window.scrollTo(0, 0); return; }
   const a = e.target.closest("[data-a]"); if (!a) return;
   const id = a.dataset.id, si = Number(a.dataset.si), ii = Number(a.dataset.ii);
   const p = findPlan(S.edit || S.plan);
   switch (a.dataset.a) {
     case "today": S.today = S.today.includes(id) ? S.today.filter(x => x !== id) : [...S.today, id]; store.set("shai_today", S.today); render(); break;
+    case "plan-pop": if (p && isMine(p)) { if (id) p.pop = id; else delete p.pop; save(); render(); } break;
     case "sort": S.sort = id; store.set("shai_sort", id); render(); break;
     case "src": S.src = id; store.set("shai_src", id); render(); break;
     case "plan": S.plan = id; S.confirm = null; render(); window.scrollTo(0, 0); break;
@@ -940,19 +1027,45 @@ document.addEventListener("click", async e => {
       if (l[l.length - 1] === todayISO()) { l.pop(); toast("הסימון בוטל"); } else { l.push(todayISO()); toast("נרשם שהעברת את המערך היום"); }
       save(); render(); break; }
     case "dup": { const n = newPlan(p); S.plan = n.id; S.edit = n.id; render(); window.scrollTo(0, 0); toast("נוצר עותק שלך. אפשר לערוך."); break; }
-    case "new-plan": { const n = newPlan(null); S.plan = n.id; S.edit = n.id; render(); window.scrollTo(0, 0); break; }
-    case "edit": S.edit = S.plan; S.confirm = null; render(); window.scrollTo(0, 0); break;
-    case "end-edit": S.edit = null; S.confirm = null; render(); window.scrollTo(0, 0); break;
-    case "up": case "down": { const arr = p.s[si][2]; const j = a.dataset.a === "up" ? ii - 1 : ii + 1; [arr[ii], arr[j]] = [arr[j], arr[ii]]; save(); render(); break; }
-    case "item-del": p.s[si][2].splice(ii, 1); save(); render(); break;
+    case "new-plan": S.wiz = { step: 1, n: "", pop: "" }; S.plan = null; S.edit = null; render(); window.scrollTo(0, 0); break;
+    case "wiz-pop": S.wiz.pop = id || ""; render(); break;
+    case "wiz-cancel": S.wiz = null; render(); window.scrollTo(0, 0); break;
+    case "wiz-next": {
+      if (S.wiz.step === 1) {
+        const n = newPlan(null); n.n = S.wiz.n.trim() || "מערך חדש"; if (S.wiz.pop) n.pop = S.wiz.pop; save();
+        S.wiz = { step: 2, id: n.id }; S.plan = n.id; S.edit = n.id;
+      } else { S.wiz.step = 3; S.edit = null; }
+      render(); window.scrollTo(0, 0); break; }
+    case "wiz-back": S.wiz.step = 2; S.edit = S.wiz.id; render(); window.scrollTo(0, 0); break;
+    case "wiz-done": S.plan = S.wiz.id; S.wiz = null; S.edit = null; render(); window.scrollTo(0, 0); toast("המערך נשמר"); break;
+    case "edit": S.edit = S.plan; S.wiz = null; S.confirm = null; S.moreOpen = false; render(); window.scrollTo(0, 0); break;
+    case "end-edit": S.edit = null; S.confirm = null; render(); window.scrollTo(0, 0); if (a.classList.contains("wide")) toast("נשמר"); break;
+    case "item-menu": {
+      const arr = p.s[si][2], ex = EX[arr[ii][0]];
+      sheetCtx = { kind: "item", si, ii };
+      sheet(`<h3 id="sheet-title">${ex ? esc(ex.n) : "תרגיל"}</h3>
+        <div class="item-menu">
+          <button type="button" class="btn ghost" data-a="swap" data-si="${si}" data-ii="${ii}">⇄ החלפה בתרגיל אחר</button>
+          <button type="button" class="btn ghost" data-a="up" data-si="${si}" data-ii="${ii}" ${ii === 0 ? "disabled" : ""}>↑ להזיז למעלה</button>
+          <button type="button" class="btn ghost" data-a="down" data-si="${si}" data-ii="${ii}" ${ii === arr.length - 1 ? "disabled" : ""}>↓ להזיז למטה</button>
+          <div class="field"><label for="f-dose-${si}-${ii}">חזרות או זמן (לא חובה)</label><input class="inp" id="f-dose-${si}-${ii}" data-f="dose" data-si="${si}" data-ii="${ii}" value="${esc(arr[ii][1] || "")}" placeholder="למשל: 8 חזרות, דקה"></div>
+          <button type="button" class="btn danger" data-a="item-del" data-si="${si}" data-ii="${ii}">✕ הסרה מהמערך</button>
+          <button type="button" class="btn wide" data-a="close-render">סיום</button>
+        </div>`);
+      break; }
+    case "close-render": closeOverlay(); render(); break;
+    case "up": case "down": { const arr = p.s[si][2]; const j = a.dataset.a === "up" ? ii - 1 : ii + 1; [arr[ii], arr[j]] = [arr[j], arr[ii]]; save(); closeOverlay(); render(); toast(a.dataset.a === "up" ? "הוזז למעלה" : "הוזז למטה"); break; }
+    case "item-del": p.s[si][2].splice(ii, 1); save(); closeOverlay(); render(); toast("הוסר מהמערך"); break;
     case "sec-del": p.s.splice(si, 1); save(); render(); break;
     case "add-sec": p.s.push(["חלק חדש", 5, []]); save(); render(); break;
     case "add-item": openPicker(si, null); break;
     case "swap": openPicker(si, ii); break;
     case "pick": {
       const { si: s2, swapIi } = sheetCtx;
-      if (swapIi != null) { p.s[s2][2][swapIi][0] = id; toast("הוחלף"); } else { p.s[s2][2].push([id, ""]); toast("נוסף למערך"); }
-      save(); closeOverlay(); render(); break; }
+      if (swapIi != null) { p.s[s2][2][swapIi][0] = id; toast("הוחלף"); save(); closeOverlay(); render(); break; }
+      // adding: stay open so she can pick several in a row
+      p.s[s2][2].push([id, ""]); sheetCtx.added = (sheetCtx.added || 0) + 1; save(); render(); drawPicker(); toast("נוסף ✓"); break; }
+    case "pick-pop": sheetCtx.pop = id || ""; drawPicker(); break;
     case "pick-new": { const after = { si: sheetCtx.si }; openExForm(null); sheetCtx.after = after; break; }
     case "del-plan": S.confirm = "del-plan"; render(); break;
     case "cancel": S.confirm = null; render(); break;
@@ -1000,10 +1113,13 @@ document.addEventListener("click", async e => {
   }
 });
 
+// remember whether "עוד הגדרות" is open, so it stays open after each change
+document.addEventListener("toggle", e => { if (e.target.dataset && e.target.dataset.keep === "more") S.moreOpen = e.target.open; }, true);
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.id === "lib-q") { S.q = el.value; const pos = el.selectionStart; render(); const i = document.getElementById("lib-q"); i.focus(); i.setSelectionRange(pos, pos); return; }
   if (el.id === "pick-q" && sheetCtx && sheetCtx.kind === "pick") { sheetCtx.q = el.value.trim(); drawPicker(); return; }
+  if (el.id === "wiz-n" && S.wiz) { S.wiz.n = el.value; return; }
   const f = el.dataset && el.dataset.f; if (!f) return;
   const p = findPlan(S.edit); if (!p) return;
   const si = Number(el.dataset.si), ii = Number(el.dataset.ii);
