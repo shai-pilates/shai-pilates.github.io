@@ -126,6 +126,14 @@ textarea.inp { min-height: 80px; resize: vertical }
 .app-foot { margin: 28px 0 8px; padding-top: 14px; border-top: 1px solid var(--line, #ddd); display: grid; gap: 8px; justify-items: center; text-align: center; font-size: 14px; color: var(--muted) }
 .app-foot p { margin: 0 }
 .app-foot .linkish { min-height: 32px }
+.sub-lead { margin: 0 0 8px; color: var(--muted); font-size: 14px }
+.vers, .adapts { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px }
+.vers li { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; line-height: 1.5 }
+.vtag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line, #ccc); white-space: nowrap }
+.vtag.easy { color: var(--tone) }
+.vtag.hard { color: #b3261e }
+.adapts li { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line, #ddd); border-radius: 10px; line-height: 1.5 }
+.ad-rep i { font-style: normal; font-weight: 700; color: var(--tone) }
 .tour { display: grid; gap: 12px; justify-items: center; text-align: center }
 .tour-ic { font-size: 44px; line-height: 1 }
 .tour p { margin: 0; line-height: 1.7; font-size: 17px }
@@ -747,6 +755,18 @@ function sheet(html) {
   overlay.innerHTML = `<div class="sheet-bg" data-a="close-bg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><button type="button" class="close" data-a="close">✕ סגירה</button>${html}</div></div>`;
   const f = overlay.querySelector(".close"); if (f) f.focus();
 }
+/* Exercise versions and adaptations: same data, clearer wording (easy/hard badge, "instead:" line) */
+function verItem(v) {
+  const lvl = /\(קשה/.test(v) ? ["hard", "קשה יותר"] : /\(קל/.test(v) ? ["easy", "קל יותר"] : ["other", "עוד אפשרות"];
+  const txt = v.replace(/\s*\((קל|קשה)\)/, "");
+  return `<li><span class="vtag ${lvl[0]}">${lvl[1]}</span><span>${esc(txt)}</span></li>`;
+}
+function adaptItem(name, v) {
+  const m = v.match(/^(.*?)\s*\.?\s*להחליף:\s*(.*)$/);
+  const head = m ? m[1] : v, rep = m ? m[2] : "";
+  const no = /^לא מתאים/.test(head);
+  return `<li><b>${esc(name)}</b>${head ? `<span class="ad-txt">${no ? "🚫 " : ""}${esc(head)}</span>` : ""}${rep ? `<span class="ad-rep"><i>במקום זה:</i> ${esc(rep)}</span>` : ""}</li>`;
+}
 async function openEx(id, confirmDel) {
   const e = EX[id]; if (!e) return;
   sheetCtx = { kind: "ex", id };
@@ -761,8 +781,8 @@ async function openEx(id, confirmDel) {
       </div><span class="note-local">${VSYNC.status(id)}</span></div>
     ${e.c ? `<h4>איך עושים</h4><p>${esc(e.c)}</p>` : ""}
     ${e.g && e.g.length ? `<h4>ציוד</h4><p>${esc(e.g.join(", "))}</p>` : ""}
-    ${e.v && e.v.length ? `<h4>גרסאות</h4><ul>${e.v.map(v => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
-    ${xs.length ? `<h4>התאמות למקרים מיוחדים</h4><ul>${xs.map(([k, v]) => `<li><b>${POP[k]}:</b> ${esc(v)}</li>`).join("")}</ul>` : `<h4>התאמות</h4><p>אין הגבלה מיוחדת. בכל מקרה לפי שיקול דעתך.</p>`}
+    ${e.v && e.v.length ? `<h4>אפשר לעשות את זה גם כך</h4><p class="sub-lead">גרסאות קלות וקשות יותר של אותו תרגיל:</p><ul class="vers">${e.v.map(verItem).join("")}</ul>` : ""}
+    ${xs.length ? `<h4>אם יש מתאמנת עם מצב מיוחד</h4><p class="sub-lead">כך אפשר להתאים את התרגיל לכל מצב:</p><ul class="adapts">${xs.map(([k, v]) => adaptItem(POP[k], v)).join("")}</ul>` : `<h4>התאמות</h4><p>אין הגבלה מיוחדת. בכל מקרה לפי שיקול דעתך.</p>`}
     ${e.own ? (confirmDel ? `<div class="confirm"><b>למחוק את התרגיל?</b><span>הוא יוסר גם מהמערכים שלך. אי אפשר לבטל.</span><div class="row"><button type="button" class="btn danger" data-a="ex-del-yes">כן, למחוק</button><button type="button" class="btn ghost" data-a="ex-del-no">ביטול</button></div></div>`
       : `<div class="row"><button type="button" class="btn ghost" data-a="ex-edit">עריכת התרגיל</button><button type="button" class="btn danger" data-a="ex-del">מחיקה</button></div>`) : ""}`);
   if (hasV) {
