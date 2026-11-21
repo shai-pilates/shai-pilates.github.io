@@ -766,7 +766,7 @@ function viewWiz3(p) {
   if (!p) { S.wiz = null; return viewPlans(); }
   const n = p.s.reduce((a, s) => a + s[2].length, 0);
   return `<div class="plan-view"><p class="wiz-step">שלב 3 מתוך 3: בודקים ושומרים</p>
-  <div class="plan-head"><h2>${esc(p.n)}</h2><p class="lead">${n} תרגילים · ${planMins(p)} דקות${p.pop && POP[p.pop] ? " · ל" + esc(POP[p.pop]) : ""}</p></div>
+  <div class="plan-head"><h2>${esc(p.n)}</h2><p class="lead">${n === 1 ? "תרגיל אחד" : n + " תרגילים"} · ${planMins(p)} דקות${p.pop && POP[p.pop] ? " · ל" + esc(POP[p.pop]) : ""}</p></div>
   ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d, planPops(p))).join("") || `<div class="item"><span class="hint">אין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
   <button type="button" class="btn wide" data-a="wiz-done">✓ שמירת המערך</button>
   <button type="button" class="btn ghost wide" data-a="wiz-back">→ חזרה לבחירת תרגילים</button></div>`;
