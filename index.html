@@ -54,7 +54,7 @@ h1, h2, h3 { text-wrap: balance }
 header { padding-block: 22px 0; display: flex; flex-direction: column; gap: 14px }
 .brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin: 0; line-height: 1.1 }
-.small-btn { min-height: 40px; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 4px 12px; cursor: pointer; font-size: 15px; color: var(--muted) }
+.small-btn { min-height: 44px; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 4px 12px; cursor: pointer; font-size: 15px; color: var(--muted) }
 .switch { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 4px; gap: 4px }
 .switch button { min-height: 50px; border: 0; border-radius: 10px; background: transparent; font-size: 18px; font-weight: 700; cursor: pointer; color: var(--muted) }
 .switch button[aria-pressed="true"] { background: var(--tone); color: var(--card) }
@@ -69,7 +69,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin
 .today b { font-size: 15px }
 .hint { font-size: 13px; color: var(--muted) }
 .chips { display: flex; flex-wrap: wrap; gap: 6px }
-.chip { min-height: 40px; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--bg); cursor: pointer; font-size: 15px }
+.chip { min-height: 44px; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--bg); cursor: pointer; font-size: 15px }
 .chip[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--fg); font-weight: 700 }
 .chip.f[aria-pressed="true"] { background: var(--tone-soft); border-color: var(--tone) }
 
@@ -190,6 +190,12 @@ details.tips { margin-bottom: 14px }
 details.tips h4 { margin: 10px 0 4px }
 details.tips ul { margin: 0; padding-inline-start: 20px }
 .pop-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px }
+details.pop summary > span:first-child { flex: 1 }
+.sum-hint { font-size: 14px; font-weight: 400; color: var(--mute, #a3ada7); align-self: center }
+.btn.big { min-height: 56px; font-size: 18px }
+.pop-body .today { border: 0; padding: 0; background: none }
+.pop-body .btn.wide { justify-content: center }
+details.pop summary::-webkit-details-marker { display: none }
 .pop-body h3 { margin: 6px 0 0; font-size: 15px; color: var(--tone) }
 .pop-body ul { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px }
 
@@ -281,7 +287,7 @@ details.tips ul { margin: 0; padding-inline-start: 20px }
 
 <div class="app" dir="rtl" lang="he">
   <header>
-    <div class="brand"><h1>הסטודיו של שי</h1><button type="button" class="small-btn" data-a="backup">גיבוי</button></div>
+    <div class="brand"><h1>הסטודיו של שי</h1><button type="button" class="small-btn" data-a="backup" aria-label="הגדרות ושמירה">⚙ הגדרות</button></div>
     <div class="switch" role="group" aria-label="סוג שיעור">
       <button type="button" id="mode-barre" data-mode="barre">פילאטיס בר</button>
       <button type="button" id="mode-mat" data-mode="mat">פילאטיס מזרון</button>
@@ -603,10 +609,12 @@ function planPopBox(p, editing) {
     ${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="plan-pop" data-id="${k}" aria-pressed="${p.pop === k}">${v}</button>`).join("")}</div>
     <span class="hint">${!p.pop ? "בוחרים מצב, ובכל תרגיל תופיע רק ההתאמה שלו." : n ? `${n} תרגילים במערך לא מתאימים ל${POP[p.pop]}. ${editing ? "לוחצים ⇄ ליד התרגיל כדי להחליף." : 'לוחצים "עריכה" ואז ⇄ כדי להחליף.'}` : `✓ כל התרגילים במערך מתאימים ל${POP[p.pop]} (עם ההתאמות שכתובות).`}</span></div>`;
 }
+const kOpen = k => !!(S.keep && S.keep[k]);
 function todayBox() {
-  return `<div class="today"><b>יש היום בשיעור:</b>
-    <div class="chips">${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="today" data-id="${k}" aria-pressed="${S.today.includes(k)}">${v}</button>`).join("")}</div>
-    <span class="hint">בוחרים, ובכל תרגיל שצריך התאמה תופיע הערה עם החלופה.</span></div>`;
+  const names = S.today.filter(k => POP[k]).map(k => POP[k]).join(", ");
+  return `<details class="pop today-d" data-keep="today" ${kOpen("today") ? "open" : ""}><summary><span>מי בשיעור היום?</span><span class="sum-hint">${names ? esc(names) : "אף אחת מיוחדת"}</span></summary>
+    <div class="pop-body"><div class="chips">${Object.entries(POP).map(([k, v]) => `<button type="button" class="chip" data-a="today" data-id="${k}" aria-pressed="${S.today.includes(k)}">${v}</button>`).join("")}</div>
+    <span class="hint">בוחרים, ובכל תרגיל שצריך התאמה תופיע הערה עם החלופה.</span></div></details>`;
 }
 function planWarnCount(p) {
   const pops = planPops(p); if (!pops.length) return 0;
@@ -638,7 +646,7 @@ function viewPlans() {
   const mine = sortPlans(DB.plans.filter(p => p.t === S.mode));
   const all = PLANS.filter(p => p.t === S.mode);
   const grp = p => (p.tags || []).includes("של שי") ? "shai" : (p.tags || []).includes("ממקורות") ? "web" : "general";
-  const GN = { shai: "של שי", web: "ממקורות מהאינטרנט", general: "כלליים (נכתבו בלי מקור)" };
+  const GN = { shai: "של שי", web: "ממקורות מהאינטרנט", general: "כלליים" };
   const has = g => all.some(p => grp(p) === g);
   const src = S.src && S.src !== "all" && has(S.src) ? S.src : "all";
   const byName = l => S.sort === "oldest" ? sortPlans(l) : [...l].sort((a, b) => String(a.n).localeCompare(String(b.n), "he", { numeric: true }));
@@ -649,13 +657,15 @@ function viewPlans() {
     ${BARRE_TIPS.map(([h, items]) => `<h4>${esc(h)}</h4><ul>${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`).join("")}</div></details>` : "";
   const srcChips = nShai ? `<div class="chips" role="group" aria-label="אילו מערכים">${[["all", "הכול"], ["shai", "של שי"], ["web", "ממקורות"], ["general", "כלליים"]].filter(([k]) => k === "all" || has(k)).map(([k, v]) =>
     `<button type="button" class="chip f" data-a="src" data-id="${k}" aria-pressed="${src === k}">${v}</button>`).join("")}</div>` : "";
-  return `${todayBox()}${tips}
-  <div class="chips" role="group" aria-label="סדר"><button type="button" class="chip f" data-a="sort" data-id="default" aria-pressed="${S.sort !== "oldest"}">סדר רגיל</button><button type="button" class="chip f" data-a="sort" data-id="oldest" aria-pressed="${S.sort === "oldest"}">מה שלא עשיתי הכי הרבה זמן</button></div>
-  <div class="list-head"><h2>המערכים שלי</h2><button type="button" class="btn ghost" data-a="new-plan">+ מערך חדש</button></div>
-  ${mine.length ? `<div class="plans">${mine.map(planCard).join("")}</div>` : `<div class="empty">עוד אין מערכים משלך. אפשר ללחוץ "מערך חדש", או לפתוח מערך מוכן וללחוץ "שכפול ועריכה".</div>`}
-  <h2>${S.mode === "barre" ? "מערכי בר מוכנים" : "מערכי מזרון מוכנים"}</h2><p class="lead">${lead}</p>
-  ${srcChips}
-  ${groups.length ? groups.map(([g, l]) => `<h3 class="plan-group">${GN[g]} <span class="hint">(${l.length})</span></h3><div class="plans">${l.map(planCard).join("")}</div>`).join("") : `<div class="empty">אין כאן מערכים כרגע.</div>`}`;
+  const sortChips = mine.length > 1 ? `<div class="chips" role="group" aria-label="סדר"><button type="button" class="chip f" data-a="sort" data-id="default" aria-pressed="${S.sort !== "oldest"}">סדר רגיל</button><button type="button" class="chip f" data-a="sort" data-id="oldest" aria-pressed="${S.sort === "oldest"}">מה שלא עשיתי הכי הרבה זמן</button></div>` : "";
+  const readyOpen = S.keep && "ready" in S.keep ? S.keep.ready : mine.length === 0;
+  const ready = `<details class="pop ready-d" data-keep="ready" ${readyOpen ? "open" : ""}><summary><span>${S.mode === "barre" ? "מערכי בר מוכנים" : "מערכי מזרון מוכנים"}</span></summary>
+    <div class="pop-body"><p class="lead">${lead}</p>${srcChips}
+    ${groups.length ? groups.map(([g, l]) => `<h3 class="plan-group">${GN[g]} <span class="hint">(${l.length})</span></h3><div class="plans">${l.map(planCard).join("")}</div>`).join("") : `<div class="empty">אין כאן מערכים כרגע.</div>`}</div></details>`;
+  return `<button type="button" class="btn wide big" data-a="new-plan">+ מערך חדש</button>
+  <h2>המערכים שלי</h2>${sortChips}
+  ${mine.length ? `<div class="plans">${mine.map(planCard).join("")}</div>` : `<div class="empty">עוד אין מערכים משלך. לוחצים "מערך חדש", או פותחים מערך מוכן ולוחצים "שכפול ועריכה".</div>`}
+  ${ready}${todayBox()}${tips}`;
 }
 function viewPlan(p) {
   if (!p) { S.plan = null; return viewPlans(); }
@@ -664,14 +674,15 @@ function viewPlan(p) {
   return `<div class="plan-view"><button type="button" class="back" data-a="back">→ כל המערכים</button>
   <div class="plan-head"><h2>${esc(p.n)}</h2><p class="lead">${p.d ? esc(p.d) + " · " : ""}${planMins(p)} דקות${isMine(p) ? " · מערך שלך" : ""}</p>
   <p class="lead">${last ? `הועבר ${daysAgo(last)} · ${times} ${times === 1 ? "פעם" : "פעמים"} בסך הכול` : "עוד לא הועבר"}</p>
-  <div class="row">
-    <button type="button" class="btn" data-a="class">מצב שיעור</button>
-    <button type="button" class="btn ${taughtToday ? "done" : "ghost"}" data-a="taught">${taughtToday ? "✓ הועבר היום" : "העברתי היום"}</button>
-    ${isMine(p) ? `<button type="button" class="btn ghost" data-a="edit">עריכה</button>` : `<button type="button" class="btn ghost" data-a="dup">שכפול ועריכה</button>`}
-    ${sp ? `<a class="btn ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}
-  </div>
-  <div class="row share-row"><button type="button" class="btn ghost" data-a="share">📤 שיתוף</button><button type="button" class="btn ghost" data-a="print">🖨️ הדפסה</button></div></div>
-  ${isMine(p) ? planPopBox(p, false) : ""}${p.pop ? "" : todayBox()}
+  <button type="button" class="btn wide" data-a="class">מצב שיעור</button>
+  <details class="pop" data-keep="planmore" ${kOpen("planmore") ? "open" : ""}><summary><span>עוד פעולות</span><span class="sum-hint">העברתי היום, עריכה, שיתוף, הדפסה</span></summary><div class="pop-body">
+    <button type="button" class="btn wide ${taughtToday ? "done" : "ghost"}" data-a="taught">${taughtToday ? "✓ הועבר היום" : "העברתי היום"}</button>
+    ${isMine(p) ? `<button type="button" class="btn wide ghost" data-a="edit">עריכה</button>` : `<button type="button" class="btn wide ghost" data-a="dup">שכפול ועריכה</button>`}
+    <button type="button" class="btn wide ghost" data-a="share">📤 שיתוף</button>
+    <button type="button" class="btn wide ghost" data-a="print">🖨️ הדפסה</button>
+    ${sp ? `<a class="btn wide ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}
+  </div></details></div>
+  ${isMine(p) ? `<details class="pop plan-pop-d" data-keep="ppop" ${kOpen("ppop") ? "open" : ""}><summary><span>מצב מיוחד במערך</span><span class="sum-hint">${p.pop && POP[p.pop] ? esc(POP[p.pop]) : "בלי"}</span></summary><div class="pop-body">${planPopBox(p, false)}</div></details>` : ""}${p.pop ? "" : todayBox()}
   ${p.s.map(([name, m, items]) => `<div class="sec"><div class="sec-h">${esc(name)}<span>${esc(m)} דק׳</span></div>${items.map(([id, d]) => itemRow(id, d, planPops(p))).join("") || `<div class="item"><span class="hint">אין עדיין תרגילים בחלק הזה</span></div>`}</div>`).join("")}
   <p class="lead">לוחצים על תרגיל כדי לראות הסבר, גרסאות, התאמות וסרטון.</p></div>`;
 }
@@ -715,7 +726,7 @@ function viewEdit(p) {
     : `<button type="button" class="back" data-a="end-edit">→ חזרה למערך</button>
        <h2 style="margin:0">עריכת מערך</h2>
        <div class="field"><label for="f-name">שם המערך</label><input class="inp" id="f-name" data-f="n" value="${esc(p.n)}"></div>
-       ${planPopBox(p, true)}`;
+       <details class="pop" data-keep="epop" ${kOpen("epop") ? "open" : ""}><summary><span>מצב מיוחד במערך</span><span class="sum-hint">${p.pop && POP[p.pop] ? esc(POP[p.pop]) : "בלי"}</span></summary><div class="pop-body">${planPopBox(p, true)}</div></details>`;
   const secs = p.s.map((sec, si) => `<div class="sec-edit">
     <div class="sec-h ed-sec">${esc(sec[0] || "חלק")}<span>${esc(sec[1] || 0)} דק׳</span></div>
     ${sec[2].map(([id, d], ii) => { const ex = EX[id];
@@ -1049,7 +1060,7 @@ function openBackup(restoreMode) {
   const nP = DB.plans.length, nE = Object.keys(DB.ex).length;
   const b = store.get("shai_bk", {});
   const last = b.at && !b.dirty ? `הגיבוי האחרון: ${daysAgo(new Date(b.at).toISOString().slice(0, 10))}.` : b.dirty ? "יש שינויים שעוד לא גובו." : "";
-  sheet(`<h3 id="sheet-title">גיבוי</h3>
+  sheet(`<h3 id="sheet-title">הגדרות ושמירה</h3>
     ${last ? `<p><b>${last}</b></p>` : ""}
     ${window.CLOUD ? `<p>כל מה ששמרת (${nP} מערכים, ${nE} תרגילים משלך וסימוני "העברתי היום") <b>נשמר בענן</b>, ואפשר להיכנס מכל טלפון. גם הסרטונים נשמרים בענן.</p>
     <p class="note-local">מחוברת בתור <span dir="ltr">${esc(CLOUD.email)}</span> · <button type="button" class="linkish" data-a="sign-out">יציאה</button></p>
@@ -1231,7 +1242,7 @@ document.addEventListener("click", async e => {
 });
 
 // remember whether "עוד הגדרות" is open, so it stays open after each change
-document.addEventListener("toggle", e => { if (e.target.dataset && e.target.dataset.keep === "more") S.moreOpen = e.target.open; }, true);
+document.addEventListener("toggle", e => { const k = e.target.dataset && e.target.dataset.keep; if (!k) return; if (k === "more") S.moreOpen = e.target.open; else (S.keep = S.keep || {})[k] = e.target.open; }, true);
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.id === "lib-q") { S.q = el.value; const pos = el.selectionStart; render(); const i = document.getElementById("lib-q"); i.focus(); i.setSelectionRange(pos, pos); return; }
