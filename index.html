@@ -193,6 +193,9 @@ details.tips ul { margin: 0; padding-inline-start: 20px }
 .pop-body h3 { margin: 6px 0 0; font-size: 15px; color: var(--tone) }
 .pop-body ul { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px }
 
+.plan-group { margin: 14px 0 6px; font-size: 16px; color: var(--tone) }
+.plan-group .hint { font-weight: 400 }
+
 /* ===== Learn ===== */
 .learn-intro { line-height: 1.65 }
 .lesson-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px }
@@ -634,21 +637,25 @@ function viewPlans() {
   if (S.plan) return viewPlan(findPlan(S.plan));
   const mine = sortPlans(DB.plans.filter(p => p.t === S.mode));
   const all = PLANS.filter(p => p.t === S.mode);
-  const isShais = p => (p.tags || []).includes("של שי");
-  const nShai = all.filter(isShais).length;
-  const ready = sortPlans(S.src === "shai" ? all.filter(isShais) : S.src === "general" ? all.filter(p => !isShais(p)) : all);
+  const grp = p => (p.tags || []).includes("של שי") ? "shai" : (p.tags || []).includes("ממקורות") ? "web" : "general";
+  const GN = { shai: "של שי", web: "ממקורות מהאינטרנט", general: "כלליים (נכתבו בלי מקור)" };
+  const has = g => all.some(p => grp(p) === g);
+  const src = S.src && S.src !== "all" && has(S.src) ? S.src : "all";
+  const byName = l => S.sort === "oldest" ? sortPlans(l) : [...l].sort((a, b) => String(a.n).localeCompare(String(b.n), "he", { numeric: true }));
+  const groups = ["shai", "web", "general"].filter(g => src === "all" || src === g).map(g => [g, byName(all.filter(p => grp(p) === g))]).filter(([, l]) => l.length);
+  const nShai = ["shai", "web"].some(has);
   const lead = S.mode === "barre" ? "מערכים מגוונים, עם דגש על העבודה ליד הבר. כל מערך בנוי ל־50–55 דקות." : "מערכים לשיעור מזרון. בכל תרגיל יש גרסה קלה וקשה, והתאמות למקרים מיוחדים.";
   const tips = S.mode === "barre" && typeof BARRE_TIPS !== "undefined" ? `<details class="pop tips"><summary>טיפים לבר מהחוברת</summary><div class="pop-body">
     ${BARRE_TIPS.map(([h, items]) => `<h4>${esc(h)}</h4><ul>${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`).join("")}</div></details>` : "";
-  const srcChips = nShai ? `<div class="chips" role="group" aria-label="אילו מערכים">${[["all", "הכול"], ["shai", "של שי"], ["general", "כלליים"]].map(([k, v]) =>
-    `<button type="button" class="chip f" data-a="src" data-id="${k}" aria-pressed="${(S.src || "all") === k}">${v}</button>`).join("")}</div>` : "";
+  const srcChips = nShai ? `<div class="chips" role="group" aria-label="אילו מערכים">${[["all", "הכול"], ["shai", "של שי"], ["web", "ממקורות"], ["general", "כלליים"]].filter(([k]) => k === "all" || has(k)).map(([k, v]) =>
+    `<button type="button" class="chip f" data-a="src" data-id="${k}" aria-pressed="${src === k}">${v}</button>`).join("")}</div>` : "";
   return `${todayBox()}${tips}
   <div class="chips" role="group" aria-label="סדר"><button type="button" class="chip f" data-a="sort" data-id="default" aria-pressed="${S.sort !== "oldest"}">סדר רגיל</button><button type="button" class="chip f" data-a="sort" data-id="oldest" aria-pressed="${S.sort === "oldest"}">מה שלא עשיתי הכי הרבה זמן</button></div>
   <div class="list-head"><h2>המערכים שלי</h2><button type="button" class="btn ghost" data-a="new-plan">+ מערך חדש</button></div>
   ${mine.length ? `<div class="plans">${mine.map(planCard).join("")}</div>` : `<div class="empty">עוד אין מערכים משלך. אפשר ללחוץ "מערך חדש", או לפתוח מערך מוכן וללחוץ "שכפול ועריכה".</div>`}
   <h2>${S.mode === "barre" ? "מערכי בר מוכנים" : "מערכי מזרון מוכנים"}</h2><p class="lead">${lead}</p>
   ${srcChips}
-  <div class="plans">${ready.length ? ready.map(planCard).join("") : `<div class="empty">אין כאן מערכים כרגע.</div>`}</div>`;
+  ${groups.length ? groups.map(([g, l]) => `<h3 class="plan-group">${GN[g]} <span class="hint">(${l.length})</span></h3><div class="plans">${l.map(planCard).join("")}</div>`).join("") : `<div class="empty">אין כאן מערכים כרגע.</div>`}`;
 }
 function viewPlan(p) {
   if (!p) { S.plan = null; return viewPlans(); }
