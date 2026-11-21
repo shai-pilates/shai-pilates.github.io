@@ -1058,6 +1058,13 @@ function addToPlan(si, id) {
 function openBackup(restoreMode) {
   sheetCtx = { kind: "backup" };
   const nP = DB.plans.length, nE = Object.keys(DB.ex).length;
+  if (window.CLOUD) {   // everything is saved in the cloud: no backup / restore needed
+    sheet(`<h3 id="sheet-title">הגדרות</h3>
+      <p class="note-local">מחוברת בתור <span dir="ltr">${esc(CLOUD.email)}</span></p>
+      ${vidMeter()}
+      <button type="button" class="btn ghost wide" data-a="sign-out">יציאה</button>`);
+    return;
+  }
   const b = store.get("shai_bk", {});
   const last = b.at && !b.dirty ? `הגיבוי האחרון: ${daysAgo(new Date(b.at).toISOString().slice(0, 10))}.` : b.dirty ? "יש שינויים שעוד לא גובו." : "";
   sheet(`<h3 id="sheet-title">הגדרות ושמירה</h3>
