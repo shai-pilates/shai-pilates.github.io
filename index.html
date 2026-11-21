@@ -252,6 +252,7 @@ details.pop summary::-webkit-details-marker { display: none }
 .pick { display: flex; flex-direction: column; gap: 6px }
 .pick button { text-align: start; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; cursor: pointer; display: flex; flex-direction: column }
 .pick button small { color: var(--muted) }
+.pick-group { margin: 12px 0 2px; font-size: 15px; color: var(--tone) }
 .pick-note { font-size: 13px; color: var(--ink, inherit); margin-top: 2px }
 .pick-ok { font-size: 13px; color: var(--mat); margin-top: 2px }
 .pick-pop { margin: 4px 0 10px }
@@ -804,13 +805,18 @@ function repOrder() {
   if (p) p.s.forEach(s => s[2].forEach(([id]) => { if (EX[id] && !ids.includes(id)) ids.push(id); }));
   return ids;
 }
-function libGroups(list) {
-  if (S.mode !== "mat") return libList(list);
-  const rep = repOrder(); if (!rep.length) return libList(list);
+/* Exercises that use equipment get their own section (Shai, 22.11) */
+const hasGear = e => Array.isArray(e.g) && e.g.length > 0;
+function libGroups(all) {
+  const gear = all.filter(hasGear), list = all.filter(e => !hasGear(e));
+  const gearHTML = gear.length ? `<h3 class="lib-group">תרגילים עם אביזרים<small>${gear.length}</small></h3>${libList(gear)}` : "";
+  if (S.mode !== "mat") return (list.length ? libList(list) : "") + gearHTML;
+  const rep = repOrder(); if (!rep.length) return (list.length ? libList(list) : "") + gearHTML;
   const prep = list.filter(e => !rep.includes(e.id));
   const reps = list.filter(e => rep.includes(e.id)).sort((a, b) => rep.indexOf(a.id) - rep.indexOf(b.id));
   return (prep.length ? `<h3 class="lib-group">הכנה ופיתוח<small>${prep.length}</small></h3>${libList(prep)}` : "")
-    + (reps.length ? `<h3 class="lib-group">הרפרטואר הקלאסי<small>לפי הסדר המקורי</small></h3>${libList(reps, rep)}` : "");
+    + (reps.length ? `<h3 class="lib-group">הרפרטואר הקלאסי<small>לפי הסדר המקורי</small></h3>${libList(reps, rep)}` : "")
+    + gearHTML;
 }
 function libList(list, rep) {
   return `<div class="lib">${list.map(e => `<div class="ex"><button type="button" class="item" data-a="ex" data-id="${esc(e.id)}"><span class="top"><span class="nm">${rep ? `<span class="rep-no">${rep.indexOf(e.id) + 1}.</span>` : ""}${nmHTML(e)}${e.own ? '<span class="own-badge">שלי</span>' : ""}${videoIds.has(e.id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}</span></span>${alertsFor(e)}</button></div>`).join("")}</div>`;
@@ -1051,11 +1057,20 @@ function drawPicker() {
   if (q) list = list.filter(e => e.n.includes(q) || (e.en || "").toLowerCase().includes(q.toLowerCase()));
   // exercises that need adaptation for today's group go last; never taught ones are not tracked per exercise, so keep library order otherwise
   const need = e => (pop ? [pop] : S.today).some(k => e.x && e.x[k]) ? 1 : 0;
-  list.sort((a, b) => need(a) - need(b)); other.sort((a, b) => need(a) - need(b));
-  const row = e => {
+  // Shai 22.11: the picker follows the lesson order: prep/development first, then the classical repertoire in its original order
+  const rep = p.t === "mat" ? repOrder() : [];
+  const ord = e => rep.includes(e.id) ? 1000 + rep.indexOf(e.id) : 0;
+  list.sort((a, b) => ord(a) - ord(b)); other.sort((a, b) => ord(a) - ord(b));
+  const groupRows = arr => {
+    if (!rep.length || q) return arr.map(row).join("");
+    const pre = arr.filter(e => !rep.includes(e.id)), rp = arr.filter(e => rep.includes(e.id));
+    return (pre.length && rp.length ? `<h4 class="pick-group">הכנה ופיתוח</h4>` : "") + pre.map(row).join("")
+      + (rp.length ? `<h4 class="pick-group">הרפרטואר הקלאסי, לפי הסדר</h4>` + rp.map(e => row(e, rep.indexOf(e.id) + 1)).join("") : "");
+  };
+  const row = (e, no) => {
     const ks = pop ? [pop] : S.today.filter(k => e.x && e.x[k]);
     const notes = pop ? (e.x && e.x[pop] ? `<span class="pick-note">ל${esc(POP[pop])}: ${esc(e.x[pop])}</span>` : `<span class="pick-ok">✓ בלי הגבלה ל${esc(POP[pop])}</span>`) : ks.map(k => " · צריך התאמה ל" + POP[k]).join("");
-    return `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${nmHTML(e)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${pop ? "" : notes}</small>${pop ? notes : ""}</button>`;
+    return `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${no ? `<span class="rep-no">${no}.</span>` : ""}${nmHTML(e)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${pop ? "" : notes}</small>${pop ? notes : ""}</button>`;
   };
   const popChips = `<div class="pick-pop"><span class="pick-lbl">מתאמנת עם:</span><div class="chips">
       <button type="button" class="chip" data-a="pick-pop" data-id="" aria-pressed="${!pop}">בלי מצב מיוחד</button>
@@ -1069,8 +1084,8 @@ function drawPicker() {
   const html = `<h3 id="sheet-title">${esc(title)}</h3>
     ${addBar}${popChips}${curNote}${lead}
     <input class="search" id="pick-q" type="search" placeholder="חיפוש בכל התרגילים" value="${esc(q)}" aria-label="חיפוש תרגיל">
-    <div class="pick">${list.map(row).join("") || empty}</div>
-    ${other.length && pop ? `<details class="pick-more"><summary>עוד ${other.length} תרגילים מאזורים אחרים</summary><div class="pick">${other.map(row).join("")}</div></details>` : ""}
+    <div class="pick">${groupRows(list) || empty}</div>
+    ${other.length && pop ? `<details class="pick-more"><summary>עוד ${other.length} תרגילים מאזורים אחרים</summary><div class="pick">${groupRows(other)}</div></details>` : ""}
     <button type="button" class="btn ghost" data-a="pick-new">+ תרגיל חדש משלי</button>`;
   const box = overlay.querySelector(".sheet");
   if (box) { const qi = document.getElementById("pick-q"); const pos = qi ? qi.selectionStart : null; box.innerHTML = `<button type="button" class="close" data-a="close">✕ סגירה</button>` + html;
