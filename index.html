@@ -238,6 +238,11 @@ details.pop summary::-webkit-details-marker { display: none }
   display: flex; flex-direction: column; gap: 12px }
 .sheet h3 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0 }
 .sheet .en { color: var(--muted); margin-top: -8px }
+.nmw { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; vertical-align: top }
+.nmw .nm-he { font-size: .8em; font-weight: 400; color: var(--muted); font-family: inherit }
+.lib-group { margin: 18px 0 6px; font-size: 17px; color: var(--tone) }
+.lib-group small { color: var(--muted); font-weight: 400; font-size: 13px; margin-inline-start: 6px }
+.rep-no { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.6em; display: inline-block }
 .sheet h4 { margin: 4px 0 0; font-size: 15px; color: var(--tone) }
 .sheet ul { margin: 0; padding-inline-start: 20px }
 .sheet p { margin: 0 }
@@ -628,9 +633,13 @@ function planCard(p) {
     <span class="meta"><span class="tag">${planMins(p)} דק׳</span>${(p.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
     <span class="tag last">${last ? "הועבר " + daysAgo(last) : "עוד לא הועבר"}</span>${p.pop && POP[p.pop] ? `<span class="tag">ל${esc(POP[p.pop])}</span>` : ""}${w ? `<span class="tag w">${w} תרגילים צריכים התאמה</span>` : ""}</span></button>`;
 }
+/* Shai asked (21.11): the original English name first, the Hebrew name small under it */
+function enOf(e) { return e && e.en && e.en !== e.n ? e.en : ""; }
+function nmHTML(e) { const en = enOf(e); return en ? `<span class="nmw"><span dir="ltr" lang="en">${esc(en)}</span><span class="nm-he">${esc(e.n)}</span></span>` : esc(e.n); }
+function nmText(e) { const en = enOf(e); return en ? `${en} (${e.n})` : e.n; }
 function itemRow(id, dose, pops) {
   const ex = EX[id]; if (!ex) return `<div class="item"><span class="nm">תרגיל שנמחק</span></div>`;
-  return `<button type="button" class="item" data-a="ex" data-id="${esc(id)}"><span class="top"><span class="nm">${esc(ex.n)}${videoIds.has(id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(dose || "")}</span></span>${alertsFor(ex, pops)}</button>`;
+  return `<button type="button" class="item" data-a="ex" data-id="${esc(id)}"><span class="top"><span class="nm">${nmHTML(ex)}${videoIds.has(id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(dose || "")}</span></span>${alertsFor(ex, pops)}</button>`;
 }
 
 /* ===== Plans ===== */
@@ -693,7 +702,7 @@ function planText(p) {   // WhatsApp-friendly (*bold*)
   if (p.d) out.push(p.d);
   p.s.forEach(([name, m, items]) => {
     out.push("", `*${name}*${m ? ` · ${m} דק׳` : ""}`);
-    items.forEach(([id, d]) => { const e = EX[id]; if (e) out.push(`• ${e.n}${d ? " – " + d : ""}`); });
+    items.forEach(([id, d]) => { const e = EX[id]; if (e) out.push(`• ${nmText(e)}${d ? " – " + d : ""}`); });
   });
   return out.join("\n");
 }
@@ -711,7 +720,7 @@ function printPlan(p) {
   if (!box) { box = document.createElement("div"); box.id = "print-area"; box.dir = "rtl"; document.body.appendChild(box); }
   box.innerHTML = `<h1>${esc(p.n)}</h1><p class="sub">${p.d ? esc(p.d) + " · " : ""}${planMins(p)} דקות · ${S.mode === "barre" ? "בר" : "מזרון"}</p>
     ${p.s.map(([name, m, items]) => `<h2><span>${esc(name)}</span><span>${m ? esc(m) + " דק׳" : ""}</span></h2>
-      <ul>${items.map(([id, d]) => EX[id] ? `<li><span>${esc(EX[id].n)}</span><span>${esc(d || "")}</span></li>` : "").join("")}</ul>`).join("")}`;
+      <ul>${items.map(([id, d]) => EX[id] ? `<li><span>${esc(nmText(EX[id]))}</span><span>${esc(d || "")}</span></li>` : "").join("")}</ul>`).join("")}`;
   try { window.print(); } catch (err) { toast("ההדפסה לא זמינה כאן."); }
 }
 
@@ -730,7 +739,7 @@ function viewEdit(p) {
   const secs = p.s.map((sec, si) => `<div class="sec-edit">
     <div class="sec-h ed-sec">${esc(sec[0] || "חלק")}<span>${esc(sec[1] || 0)} דק׳</span></div>
     ${sec[2].map(([id, d], ii) => { const ex = EX[id];
-      return `<div class="ed-item"><div class="ed-row"><button type="button" class="nm" data-a="ex" data-id="${esc(id)}">${ex ? esc(ex.n) : "תרגיל שנמחק"}</button>${d ? `<span class="ds">${esc(d)}</span>` : ""}
+      return `<div class="ed-item"><div class="ed-row"><button type="button" class="nm" data-a="ex" data-id="${esc(id)}">${ex ? nmHTML(ex) : "תרגיל שנמחק"}</button>${d ? `<span class="ds">${esc(d)}</span>` : ""}
         <button type="button" class="icon-btn" data-a="item-menu" data-si="${si}" data-ii="${ii}" aria-label="פעולות על ${ex ? esc(ex.n) : "התרגיל"}">⋯</button></div>
         ${ex ? alertsFor(ex, planPops(p)) : ""}</div>`; }).join("")}
     <button type="button" class="btn ghost" data-a="add-item" data-si="${si}">+ תרגיל</button>
@@ -787,11 +796,28 @@ function viewLib() {
   <input class="search" id="lib-q" type="search" placeholder="חיפוש תרגיל" value="${esc(S.q)}" aria-label="חיפוש תרגיל">
   <div class="chips">${["", ...AREAS].map(a => `<button type="button" class="chip f" data-a="area" data-id="${a}" aria-pressed="${S.area === a}">${a || "הכול"}</button>`).join("")}</div>
   <span class="count">${list.length} תרגילים</span>
-  <div class="lib">${list.map(e => `<div class="ex"><button type="button" class="item" data-a="ex" data-id="${esc(e.id)}"><span class="top"><span class="nm">${esc(e.n)}${e.own ? '<span class="own-badge">שלי</span>' : ""}${videoIds.has(e.id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}</span></span>${alertsFor(e)}</button></div>`).join("")}</div>`;
+  ${libGroups(list)}`;
+}
+/* Mat: preparation/development first, then the classical repertoire in its original order (Shai, 12.11 + 21.11) */
+function repOrder() {
+  const p = PLANS.find(x => x.id === "m7"); const ids = [];
+  if (p) p.s.forEach(s => s[2].forEach(([id]) => { if (EX[id] && !ids.includes(id)) ids.push(id); }));
+  return ids;
+}
+function libGroups(list) {
+  if (S.mode !== "mat") return libList(list);
+  const rep = repOrder(); if (!rep.length) return libList(list);
+  const prep = list.filter(e => !rep.includes(e.id));
+  const reps = list.filter(e => rep.includes(e.id)).sort((a, b) => rep.indexOf(a.id) - rep.indexOf(b.id));
+  return (prep.length ? `<h3 class="lib-group">הכנה ופיתוח<small>${prep.length}</small></h3>${libList(prep)}` : "")
+    + (reps.length ? `<h3 class="lib-group">הרפרטואר הקלאסי<small>לפי הסדר המקורי</small></h3>${libList(reps, rep)}` : "");
+}
+function libList(list, rep) {
+  return `<div class="lib">${list.map(e => `<div class="ex"><button type="button" class="item" data-a="ex" data-id="${esc(e.id)}"><span class="top"><span class="nm">${rep ? `<span class="rep-no">${rep.indexOf(e.id) + 1}.</span>` : ""}${nmHTML(e)}${e.own ? '<span class="own-badge">שלי</span>' : ""}${videoIds.has(e.id) ? '<span class="vid-badge">▶ סרטון</span>' : ""}</span><span class="ds">${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}</span></span>${alertsFor(e)}</button></div>`).join("")}</div>`;
 }
 
 /* ===== Guide ===== */
-function exLink(id) { const e = EX[id]; return e ? `<button type="button" class="link ${e.t}" data-a="ex" data-id="${id}">${esc(e.n)}${e.t === "barre" ? " (בר)" : ""}</button>` : ""; }
+function exLink(id) { const e = EX[id]; return e ? `<button type="button" class="link ${e.t}" data-a="ex" data-id="${id}">${esc(enOf(e) || e.n)}${e.t === "barre" ? " (בר)" : ""}</button>` : ""; }
 function viewGuide() {
   return `<h2>אוכלוסיות מיוחדות</h2>
   <div class="disclaimer">מידע כללי שמבוסס על המלצות מקובלות, ולא ייעוץ רפואי. מתאמנת עם מצב רפואי צריכה אישור מרופא או מפיזיותרפיסטית. ההחלטה המקצועית בשיעור היא שלך.</div>
@@ -951,7 +977,7 @@ async function openEx(id, confirmDel) {
   const lv = ["", "קל", "בינוני", "מתקדם"][e.l] || "";
   const xs = Object.entries(e.x || {}).filter(([, v]) => v);
   const hasV = videoIds.has(id);
-  sheet(`<h3 id="sheet-title">${esc(e.n)}</h3><div class="en">${e.en ? esc(e.en) + " · " : ""}${e.t === "barre" ? "בר" : "מזרון"} · ${esc(e.a)}${lv ? " · " + lv : ""}${e.own ? " · תרגיל שלך" : ""}</div>
+  sheet(`<h3 id="sheet-title">${esc(enOf(e) || e.n)}</h3><div class="en">${enOf(e) ? esc(e.n) + " · " : ""}${e.t === "barre" ? "בר" : "מזרון"} · ${esc(e.a)}${lv ? " · " + lv : ""}${e.own ? " · תרגיל שלך" : ""}</div>
     <div class="video" id="vid-box">${hasV ? "טוען סרטון..." : "עוד אין סרטון לתרגיל הזה"}
       <div class="row" style="justify-content:center">
         <label class="btn ghost file-btn">${hasV ? "החלפת סרטון" : "הוספת סרטון"}<input type="file" accept="video/*" id="vid-in" aria-label="בחירת סרטון"></label>
@@ -1019,7 +1045,7 @@ function drawPicker() {
   if (pop) list = list.filter(e => !notFor(e, pop));
   if (swapIi != null) {
     cur = EX[p.s[si][2][swapIi][0]];
-    title = cur ? `במקום "${cur.n}"` : "החלפה";
+    title = cur ? `במקום "${enOf(cur) || cur.n}"` : "החלפה";
     if (cur && !q) { other = list.filter(e => e.a !== cur.a); list = list.filter(e => e.a === cur.a); }
   }
   if (q) list = list.filter(e => e.n.includes(q) || (e.en || "").toLowerCase().includes(q.toLowerCase()));
@@ -1029,7 +1055,7 @@ function drawPicker() {
   const row = e => {
     const ks = pop ? [pop] : S.today.filter(k => e.x && e.x[k]);
     const notes = pop ? (e.x && e.x[pop] ? `<span class="pick-note">ל${esc(POP[pop])}: ${esc(e.x[pop])}</span>` : `<span class="pick-ok">✓ בלי הגבלה ל${esc(POP[pop])}</span>`) : ks.map(k => " · צריך התאמה ל" + POP[k]).join("");
-    return `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${esc(e.n)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${pop ? "" : notes}</small>${pop ? notes : ""}</button>`;
+    return `<button type="button" data-a="pick" data-id="${esc(e.id)}"><span><b>${nmHTML(e)}</b>${e.own ? '<span class="own-badge">שלי</span>' : ""}</span><small>${esc(e.a)}${e.g && e.g.length ? " · " + esc(e.g.join(", ")) : ""}${pop ? "" : notes}</small>${pop ? notes : ""}</button>`;
   };
   const popChips = `<div class="pick-pop"><span class="pick-lbl">מתאמנת עם:</span><div class="chips">
       <button type="button" class="chip" data-a="pick-pop" data-id="" aria-pressed="${!pop}">בלי מצב מיוחד</button>
@@ -1108,7 +1134,7 @@ async function openClass() {
   overlay.innerHTML = `<div class="class-mode" role="dialog" aria-modal="true" aria-label="מצב שיעור">
     <div class="cm-top"><button type="button" class="btn ghost" data-a="close">✕ יציאה</button>${sp ? `<a class="btn ghost" href="${esc(sp)}" target="_blank" rel="noopener">פלייליסט ↗</a>` : ""}<span class="wl" id="wl"></span></div>
     <h2 style="margin:0">${esc(p.n)}</h2>
-    ${p.s.map(([name, m, items]) => `<div class="cm-sec">${esc(name)} · ${esc(m)} דק׳</div>${items.map(([id, d]) => { const e = EX[id]; return e ? `<div class="cm-it">${esc(e.n)}<small>${esc(d || "")}</small>${alertsFor(e)}</div>` : ""; }).join("")}`).join("")}
+    ${p.s.map(([name, m, items]) => `<div class="cm-sec">${esc(name)} · ${esc(m)} דק׳</div>${items.map(([id, d]) => { const e = EX[id]; return e ? `<div class="cm-it">${nmHTML(e)}<small>${esc(d || "")}</small>${alertsFor(e)}</div>` : ""; }).join("")}`).join("")}
   </div>`;
   overlay.querySelector(".btn").focus();
   const wl = document.getElementById("wl");
@@ -1178,7 +1204,7 @@ document.addEventListener("click", async e => {
     case "item-menu": {
       const arr = p.s[si][2], ex = EX[arr[ii][0]];
       sheetCtx = { kind: "item", si, ii };
-      sheet(`<h3 id="sheet-title">${ex ? esc(ex.n) : "תרגיל"}</h3>
+      sheet(`<h3 id="sheet-title">${ex ? nmHTML(ex) : "תרגיל"}</h3>
         <div class="item-menu">
           <button type="button" class="btn ghost" data-a="swap" data-si="${si}" data-ii="${ii}">⇄ החלפה בתרגיל אחר</button>
           <button type="button" class="btn ghost" data-a="up" data-si="${si}" data-ii="${ii}" ${ii === 0 ? "disabled" : ""}>↑ להזיז למעלה</button>
